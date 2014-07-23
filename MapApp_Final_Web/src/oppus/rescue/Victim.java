@@ -1,12 +1,16 @@
 package oppus.rescue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import oppus.rescue.Victim.VictimNode;
+
+import android.util.Log;
+import android.util.SparseArray;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -19,7 +23,10 @@ public class Victim {
 	private int idMainMarker;
 	private String idNode;
 	private int idPoints;
-	private boolean safe;
+	private boolean safe; 
+	private int totalMicro;
+	private int totalScreen;
+	
 
 	public Victim(Marker marker, String message, long timestamp, int steps,
 			int screen, int distance, int batery, boolean safe) {
@@ -33,12 +40,24 @@ public class Victim {
 		lastTimeStamp = timestamp;
 	}
 
+	public Victim() {
+		// TODO Auto-generated constructor stub
+	}
+
 	public ArrayList<VictimNode> getMarkers() {
 		return points;
 	}
 
 	public long lastTimeStamp() {
 		return lastTimeStamp;
+	}
+
+	public String getId() {
+		return idNode;
+	}
+
+	public int getNumberOfPoints() {
+		return points.size();
 	}
 
 	public boolean checkUpdateMarker(long timestamp) {
@@ -49,6 +68,47 @@ public class Victim {
 
 	}
 
+	public ArrayList<String> getMessageNodes() {
+		ArrayList<String> result = new ArrayList<String>();
+		for (VictimNode vn : points) {
+			String m;
+			if ((m = vn.getMessage()) != null && !m.equals("")) {
+				result.add(m + ";;;" + vn.id);
+			}
+		}
+		return result;
+	}
+	
+	public int getBatteryValue() {
+	
+		return points.get(idMainMarker).batery;
+	}
+
+	public ArrayList<GraphValue> getScreenValues() {
+		ArrayList<GraphValue> result = new ArrayList<GraphValue>();
+		for (VictimNode vn : points) {
+			result.add(new GraphValue(vn.screen, vn.timestamp));
+		}
+		return result;
+	}
+	
+	public ArrayList<GraphValue> getMicroValues() {
+		ArrayList<GraphValue> result = new ArrayList<GraphValue>();
+		for (VictimNode vn : points) {
+			result.add(new GraphValue(vn.steps, vn.timestamp));
+		}
+		return result;
+	}
+	public ArrayList<GraphValue> getDistanceValues() {
+		ArrayList<GraphValue> result = new ArrayList<GraphValue>();
+		int lastDistance = 0;
+		for (VictimNode vn : points) {
+			result.add(new GraphValue(vn.distance-lastDistance, vn.timestamp));
+			lastDistance= vn.distance;
+		}
+		return result;
+	}
+ 
 	public Marker getMarker() {
 		return mainMarker;
 	}
@@ -66,10 +126,11 @@ public class Victim {
 
 	int addNode(LatLng position, long timestamp, String message, int steps,
 			int screen, int distance, int batery, boolean safe) {
-
-		points.add((new VictimNode(position, timestamp, message, steps, screen,
+		
+		points.add((new VictimNode(position, timestamp, message, (steps- totalMicro), screen- totalScreen,
 				distance, batery, safe)));
-
+		totalMicro=steps;
+		totalScreen=screen;
 		return points.size() - 1;
 
 	}
@@ -87,7 +148,7 @@ public class Victim {
 
 		VictimNode(LatLng coord, long timestamp, String message, int steps,
 				int screen, int distance, int batery, boolean safe) {
-			this.coord = coord;
+			this.coord = coord; 
 			this.timestamp = timestamp;
 			this.message = message;
 			this.steps = steps;

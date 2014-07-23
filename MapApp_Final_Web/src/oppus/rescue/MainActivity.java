@@ -6,12 +6,15 @@ import oppus.rescue.R;
 import oppus.rescue.sidebar.adapter.NavDrawerListAdapter;
 import oppus.rescue.sidebar.model.NavDrawerItem;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.widget.DrawerLayout;
 import android.util.Log;
@@ -20,8 +23,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
+	private final static String LT = "RESCUE";
+
 	private DrawerLayout mDrawerLayout;
 	private ListView mDrawerList;
 	private ActionBarDrawerToggle mDrawerToggle;
@@ -49,6 +56,17 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		View decorView = getWindow().getDecorView();
+		// Hide the status bar.
+		int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+		decorView.setSystemUiVisibility(uiOptions);
+		// Remember that you should never show the action bar if the
+		// status bar is hidden, so hide that too if necessary.
+		ActionBar actionBar = getActionBar();
+		actionBar.hide();
+		Intent intent = new Intent(
+				"net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
+		startService(intent);
 
 		mTitle = mDrawerTitle = getTitle();
 
@@ -181,33 +199,40 @@ public class MainActivity extends Activity {
 		FragmentManager fragmentManager = getFragmentManager();
 		switch (position) {
 		case 0:
-			if(currentFrag!=null){
+			if (currentFrag != null) {
 				Log.d("RESCUE", "removed fragment");
 				fragmentManager.beginTransaction().remove(currentFrag).commit();
-				currentFrag=null;
+				currentFrag = null;
 			}
 			if (fragment != null) {
 				fragmentManager.beginTransaction().attach(fragment).commit();
 			}
 			break;
 		case 1:
-			//fragmentManager.beginTransaction().detach(fragment).commit();
-
+			// fragmentManager.beginTransaction().detach(fragment).commit();
+			fragment.startDemo();
 			break;
 		case SETTINGS:
 
 			fragmentManager.beginTransaction().detach(fragment).commit();
-		
-			fragmentManager.beginTransaction()
-					.replace(R.id.frame_container, currentFrag= new Settings(fragment.getMapManager())).commit();
+
+			fragmentManager
+					.beginTransaction()
+					.replace(
+							R.id.frame_container,
+							currentFrag = new Settings(fragment.getMapManager()))
+					.commit();
 			break;
 		case STATS:
 
 			fragmentManager.beginTransaction().detach(fragment).commit();
-			fragmentManager.beginTransaction()
-					.replace(R.id.frame_container,currentFrag= new Stats(fragment.getMapManager())).commit();
+			fragmentManager
+					.beginTransaction()
+					.replace(R.id.frame_container,
+							currentFrag = new Stats(fragment.getMapManager()))
+					.commit();
 			break;
-		default: 
+		default:
 			break;
 		}
 
@@ -218,6 +243,58 @@ public class MainActivity extends Activity {
 		super.onConfigurationChanged(newConfig);
 		// Pass any configuration change to the drawer toggls
 		mDrawerToggle.onConfigurationChanged(newConfig);
+	}
+
+	public void next(View v) {
+		fragment.next();
+	}
+
+	public void back(View v) {
+		fragment.back();
+	}
+
+	public void screenGraph(View v) {
+		fragment.screenGraph();
+	}
+
+	public void distanceGraph(View v) {
+		fragment.distanceGraph();
+
+	}
+
+	public void microGraph(View v) {
+		fragment.microGraph();
+
+	}
+
+	/**
+	 * DEMO
+	 */
+	private final int interval = 1000; // 1 Second
+	private int time = 120;
+	private Handler handler = new Handler();
+	private Runnable runnable = new Runnable() {
+		public void run() {
+			TextView t = (TextView) findViewById(R.id.timer);
+			time--;
+			t.setText(time + "s");
+
+			if (time != 0) {
+				handler.postDelayed(runnable, interval);
+
+			} else {
+				time=120;
+				fragment.saved();
+			}
+
+		}
+	};
+
+	public void save(View v) {
+		Toast.makeText(getApplicationContext(), "Saving Victims wait 120 sec",
+				Toast.LENGTH_LONG).show();
+		handler.postDelayed(runnable, interval);
+		findViewById(R.id.saveButton).setVisibility(View.INVISIBLE);
 	}
 
 }

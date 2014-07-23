@@ -10,6 +10,7 @@
     <color name="rounded_container_bg">#80000000</color>
     <color name="rounded_container_border">#3b3f44</color>
     <color name="light_gray_header_color">#646663</color>
-	<color name="white">#ffffffff</color>
-
+	<color name="white">#ffffff</color>
+	<color name="text_info_window">#ffffffff</color>
+	
 </resources>
