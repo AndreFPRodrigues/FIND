@@ -123,7 +123,7 @@ public class AndroidPreferences implements IDomainPreferences {
 	public boolean checkInternetMode() {
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(mContext);
-		boolean internetState = prefs.getBoolean("internet",false);
+		boolean internetState = prefs.getBoolean("internet",true);
 		return internetState;
 	}
 

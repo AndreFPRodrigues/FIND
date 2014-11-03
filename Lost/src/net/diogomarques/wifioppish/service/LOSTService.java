@@ -44,6 +44,8 @@ public class LOSTService extends Service {
 	private NotificationManager notificationManager;
 	private static IEnvironment environment;
 	
+	public static boolean serviceActive=false;
+	
 	@Override
 	public void onCreate() { 
 		super.onCreate();
@@ -59,6 +61,7 @@ public class LOSTService extends Service {
 
 			environment.stopStateLoop();
 			environment=null;
+			serviceActive=false;
 		}
 		stopSelf();
 		Log.i(TAG, "Service destroyed");
@@ -77,7 +80,7 @@ public class LOSTService extends Service {
 				return null;
 			}
 			 
-		}.execute();
+		}.execute(); 
 	}
 
 	@Override
@@ -91,7 +94,8 @@ public class LOSTService extends Service {
 
 		if (environment == null) {
 			Log.i(TAG, "Creating new instance");
-
+			serviceActive=true;
+			
 			// populate default preferences that may be missing
 			PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 

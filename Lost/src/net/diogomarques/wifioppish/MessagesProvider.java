@@ -16,44 +16,59 @@ import android.text.TextUtils;
 import android.util.Log;
 
 /**
- * Content Provider to access {@link Message Messages} received and sent to 
+ * Content Provider to access {@link Message Messages} received and sent to
  * opportunistic network.
  * 
- * @author AndrÃ© Silva <asilva@lasige.di.fc.ul.pt>
+ * @author André Silva <asilva@lasige.di.fc.ul.pt>
  */
 public class MessagesProvider extends ContentProvider {
-	
+
 	private static final String TAG = "Messages Provider";
-	
+
 	// content provider
 	public static final String PROVIDER = "net.diogomarques.wifioppish.MessagesProvider";
 	public static final String PROVIDER_URL = "content://" + PROVIDER + "/";
-	
+
 	// methods available
 	public static final String METHOD_RECEIVED = "received";
-	public static final Uri URI_RECEIVED = Uri.parse(PROVIDER_URL + METHOD_RECEIVED);
+	public static final Uri URI_RECEIVED = Uri.parse(PROVIDER_URL
+			+ METHOD_RECEIVED);
 	public static final int URI_RECEIVED_CODE = 1;
-	public static final Uri URI_RECEIVED_ID = Uri.parse(PROVIDER_URL + METHOD_RECEIVED + "/*");
+	public static final Uri URI_RECEIVED_ID = Uri.parse(PROVIDER_URL
+			+ METHOD_RECEIVED + "/*");
 	public static final int URI_RECEIVED_ID_CODE = 5;
-	
+
 	public static final String METHOD_SENT = "sent";
 	public static final Uri URI_SENT = Uri.parse(PROVIDER_URL + METHOD_SENT);
 	public static final int URI_SENT_CODE = 2;
-	public static final Uri URI_SENT_ID = Uri.parse(PROVIDER_URL + METHOD_SENT + "/*");
+	public static final Uri URI_SENT_ID = Uri.parse(PROVIDER_URL + METHOD_SENT
+			+ "/*");
 	public static final int URI_SENT_ID_CODE = 8;
-	
+
 	public static final String METHOD_CUSTOM = "customsend";
-	public static final Uri URI_CUSTOM = Uri.parse(PROVIDER_URL + METHOD_CUSTOM);
+	public static final Uri URI_CUSTOM = Uri
+			.parse(PROVIDER_URL + METHOD_CUSTOM);
 	public static final int URI_CUSTOM_CODE = 3;
-	public static final Uri URI_CUSTOM_ID = Uri.parse(PROVIDER_URL + METHOD_CUSTOM + "/#");
+	public static final Uri URI_CUSTOM_ID = Uri.parse(PROVIDER_URL
+			+ METHOD_CUSTOM + "/#");
 	public static final int URI_CUSTOM_ID_CODE = 4;
-	
+
 	public static final String METHOD_STATUS = "status";
-	public static final Uri URI_STATUS = Uri.parse(PROVIDER_URL + METHOD_STATUS);
+	public static final Uri URI_STATUS = Uri
+			.parse(PROVIDER_URL + METHOD_STATUS);
 	public static final int URI_STATUS_CODE = 6;
-	public static final Uri URI_STATUS_CUSTOM = Uri.parse(PROVIDER_URL + METHOD_STATUS + "/*");
+	public static final Uri URI_STATUS_CUSTOM = Uri.parse(PROVIDER_URL
+			+ METHOD_STATUS + "/*");
 	public static final int URI_STATUS_CUSTOM_CODE = 7;
-	
+
+	public static final String METHOD_SIMULATION = "simulation";
+	public static final Uri URI_SIMULATION = Uri.parse(PROVIDER_URL
+			+ METHOD_SIMULATION);
+	public static final int URI_SIMULATION_CODE = 9;
+	public static final Uri URI_SIMULATION_CUSTOM = Uri.parse(PROVIDER_URL
+			+ METHOD_SIMULATION + "/*");
+	public static final int URI_SIMULATION_CUSTOM_CODE = 10;
+
 	// database fields
 	public static final String COL_ID = "_id";
 	public static final String COL_NODE = "nodeid";
@@ -73,11 +88,13 @@ public class MessagesProvider extends ContentProvider {
 	public static final String COL_ORIGIN = "origin";
 	public static final String COL_STATUSKEY = "statuskey";
 	public static final String COL_STATUSVALUE = "statusvalue";
-	
+	public static final String COL_SIMUKEY = "simukey";
+	public static final String COL_SIMUVALUE = "simuvalue";
+
 	// constants - direction
 	public static final String MSG_SENT = "sent";
 	public static final String MSG_REC = "received";
-	
+
 	// constants - message status
 	public static final String OUT_WAIT = "waiting";
 	public static final String OUT_NET = "sentNet";
@@ -91,10 +108,15 @@ public class MessagesProvider extends ContentProvider {
 		uriMatcher.addURI(PROVIDER, METHOD_SENT, URI_SENT_CODE);
 		uriMatcher.addURI(PROVIDER, METHOD_CUSTOM, URI_CUSTOM_CODE);
 		uriMatcher.addURI(PROVIDER, METHOD_CUSTOM + "/#", URI_CUSTOM_ID_CODE);
-		uriMatcher.addURI(PROVIDER, METHOD_RECEIVED + "/*", URI_RECEIVED_ID_CODE);
+		uriMatcher.addURI(PROVIDER, METHOD_RECEIVED + "/*",
+				URI_RECEIVED_ID_CODE);
 		uriMatcher.addURI(PROVIDER, METHOD_STATUS, URI_STATUS_CODE);
-		uriMatcher.addURI(PROVIDER, METHOD_STATUS + "/*", URI_STATUS_CUSTOM_CODE);
-		uriMatcher.addURI(PROVIDER, METHOD_SENT + "/*",  URI_SENT_ID_CODE);
+		uriMatcher.addURI(PROVIDER, METHOD_STATUS + "/*",
+				URI_STATUS_CUSTOM_CODE);
+		uriMatcher.addURI(PROVIDER, METHOD_SENT + "/*", URI_SENT_ID_CODE);
+		uriMatcher.addURI(PROVIDER, METHOD_SIMULATION, URI_SIMULATION_CODE);
+		uriMatcher.addURI(PROVIDER, METHOD_SIMULATION + "/*",
+				URI_SIMULATION_CUSTOM_CODE);
 	}
 
 	// database declarations
@@ -104,48 +126,37 @@ public class MessagesProvider extends ContentProvider {
 	static final String TABLE_INCOMING = "incoming";
 	static final String TABLE_TOSEND = "tosend";
 	static final String TABLE_STATUS = "status";
-	static final int DATABASE_VERSION = 2;
-	static final String CREATE_TABLE_OUTGOING = 
-			" CREATE TABLE " + TABLE_OUTGOING +
-			" (" + COL_ID + " TEXT PRIMARY KEY, " + 
-			" " + COL_NODE + " TEXT," +
-			" " + COL_TIME + " DOUBLE," +
-			" " + COL_MSG + " TEXT," +
-			" " + COL_LAT + " DOUBLE," + 
-			" " + COL_LON + " DOUBLE," +
-			" " + COL_CONF + " INTEGER," +
-			" " + COL_BATTERY + " INTEGER," + 
-			" " + COL_STEPS + " INTEGER," + 
-			" " + COL_SCREEN + " INTEGER," + 
-			" " + COL_DISTANCE + " INTEGER," + 
-			" " + COL_SAFE + " INTEGER," +
-			" " + COL_ADDED + " DOUBLE," +
-			" " + COL_STATUS + " TEXT );";
-	static final String CREATE_TABLE_INCOMING = 
-			" CREATE TABLE " + TABLE_INCOMING +
-			" (" + COL_ID + " TEXT PRIMARY KEY, " + 
-			" " + COL_NODE + " TEXT," +
-			" " + COL_TIME + " DOUBLE," +
-			" " + COL_MSG + " TEXT," +
-			" " + COL_LAT + " DOUBLE," + 
-			" " + COL_LON + " DOUBLE," +
-			" " + COL_CONF + " INTEGER," +
-			" " + COL_BATTERY + " INTEGER," + 
-			" " + COL_STEPS + " INTEGER," + 
-			" " + COL_SCREEN + " INTEGER," + 
-			" " + COL_DISTANCE + " INTEGER," + 
-			" " + COL_SAFE + " INTEGER," +
-			" " + COL_ORIGIN + " TEXT," + 
-			" " + COL_ADDED + " DOUBLE);";
-	static final String CREATE_TABLE_TOSEND = 
-			" CREATE TABLE " + TABLE_TOSEND +
-			" (customMessage TEXT PRIMARY KEY);";
-	static final String CREATE_TABLE_STATUS =
-			" CREATE TABLE " + TABLE_STATUS + 
-			" (" + COL_STATUSKEY + " TEXT," + 
-			" " + COL_STATUSVALUE + " TEXT)";
+	static final String TABLE_SIMULATION = "simulation";
 
-	// class that creates and manages the provider's database 
+	static final int DATABASE_VERSION = 2;
+	static final String CREATE_TABLE_OUTGOING = " CREATE TABLE "
+			+ TABLE_OUTGOING + " (" + COL_ID + " TEXT PRIMARY KEY, " + " "
+			+ COL_NODE + " TEXT," + " " + COL_TIME + " DOUBLE," + " " + COL_MSG
+			+ " TEXT," + " " + COL_LAT + " DOUBLE," + " " + COL_LON
+			+ " DOUBLE," + " " + COL_CONF + " INTEGER," + " " + COL_BATTERY
+			+ " INTEGER," + " " + COL_STEPS + " INTEGER," + " " + COL_SCREEN
+			+ " INTEGER," + " " + COL_DISTANCE + " INTEGER," + " " + COL_SAFE
+			+ " INTEGER," + " " + COL_ADDED + " DOUBLE," + " " + COL_STATUS
+			+ " TEXT );";
+	static final String CREATE_TABLE_INCOMING = " CREATE TABLE "
+			+ TABLE_INCOMING + " (" + COL_ID + " TEXT PRIMARY KEY, " + " "
+			+ COL_NODE + " TEXT," + " " + COL_TIME + " DOUBLE," + " " + COL_MSG
+			+ " TEXT," + " " + COL_LAT + " DOUBLE," + " " + COL_LON
+			+ " DOUBLE," + " " + COL_CONF + " INTEGER," + " " + COL_BATTERY
+			+ " INTEGER," + " " + COL_STEPS + " INTEGER," + " " + COL_SCREEN
+			+ " INTEGER," + " " + COL_DISTANCE + " INTEGER," + " " + COL_SAFE
+			+ " INTEGER," + " " + COL_ORIGIN + " TEXT," + " " + COL_ADDED
+			+ " DOUBLE," + "  cluster TEXT);";
+	static final String CREATE_TABLE_TOSEND = " CREATE TABLE " + TABLE_TOSEND
+			+ " (customMessage TEXT PRIMARY KEY);";
+	static final String CREATE_TABLE_STATUS = " CREATE TABLE " + TABLE_STATUS
+			+ " (" + COL_STATUSKEY + " TEXT," + " " + COL_STATUSVALUE
+			+ " TEXT)";
+	static final String CREATE_TABLE_SIMULATION = " CREATE TABLE "
+			+ TABLE_SIMULATION + " (" + COL_SIMUKEY + " TEXT," + " "
+			+ COL_SIMUVALUE + " TEXT)";
+
+	// class that creates and manages the provider's database
 	private static class DBHelper extends SQLiteOpenHelper {
 
 		public DBHelper(Context context) {
@@ -158,24 +169,26 @@ public class MessagesProvider extends ContentProvider {
 			db.execSQL(CREATE_TABLE_OUTGOING);
 			db.execSQL(CREATE_TABLE_TOSEND);
 			db.execSQL(CREATE_TABLE_STATUS);
+			db.execSQL(CREATE_TABLE_SIMULATION);
+
 		}
 
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-			Log.i(TAG,
-					"Upgrading database from version " + oldVersion + " to "
-							+ newVersion + ". Old data will be destroyed.");
+			Log.i(TAG, "Upgrading database from version " + oldVersion + " to "
+					+ newVersion + ". Old data will be destroyed.");
 
-			db.execSQL("DROP TABLE IF EXISTS " +  TABLE_INCOMING);
-			db.execSQL("DROP TABLE IF EXISTS " +  TABLE_OUTGOING);
-			db.execSQL("DROP TABLE IF EXISTS " +  TABLE_TOSEND);
-			db.execSQL("DROP TABLE IF EXISTS " +  TABLE_STATUS);
+			db.execSQL("DROP TABLE IF EXISTS " + TABLE_INCOMING);
+			db.execSQL("DROP TABLE IF EXISTS " + TABLE_OUTGOING);
+			db.execSQL("DROP TABLE IF EXISTS " + TABLE_TOSEND);
+			db.execSQL("DROP TABLE IF EXISTS " + TABLE_STATUS);
+			db.execSQL("DROP TABLE IF EXISTS " + TABLE_SIMULATION);
 
 			onCreate(db);
 		}
 
 	}
-		
+
 	@Override
 	public boolean onCreate() {
 		Context context = getContext();
@@ -183,7 +196,7 @@ public class MessagesProvider extends ContentProvider {
 		// permissions to be writable
 		database = dbHelper.getWritableDatabase();
 
-	    return database != null;
+		return database != null;
 	}
 
 	@Override
@@ -191,164 +204,214 @@ public class MessagesProvider extends ContentProvider {
 		long row = -1;
 		boolean received = false;
 		boolean status = false;
-		
+		boolean simulation = false;
+
 		try {
-			switch(uriMatcher.match(uri)) {
-				case URI_CUSTOM_CODE:
+			switch (uriMatcher.match(uri)) {
+			case URI_CUSTOM_CODE:
 				row = database.insertOrThrow(TABLE_TOSEND, "", values);
 				break;
-				
-				case URI_RECEIVED_CODE:
+
+			case URI_RECEIVED_CODE:
 				row = database.insertOrThrow(TABLE_INCOMING, "", values);
 				received = true;
 				break;
-				
-				case URI_SENT_CODE:
+
+			case URI_SENT_CODE:
 				row = database.insertOrThrow(TABLE_OUTGOING, "", values);
 				break;
-				
-				case URI_STATUS_CODE:
+
+			case URI_STATUS_CODE:
 				try {
 					row = database.insert(TABLE_STATUS, "", values);
 					status = true;
-				} catch(SQLException e) {
+				} catch (SQLException e) {
 					// key already exists, fallback to update
-					update(uri, values, COL_STATUSKEY + "=\"" + values.getAsString(COL_STATUSKEY) + "\"", null);
+					update(uri,
+							values,
+							COL_STATUSKEY + "=\""
+									+ values.getAsString(COL_STATUSKEY) + "\"",
+							null);
+				}
+				break;
+			case URI_SIMULATION_CODE:
+				try {
+					row = database.insert(TABLE_SIMULATION, "", values);
+					simulation = true;
+				} catch (SQLException e) {
+					// key already exists, fallback to update
+					update(uri,
+							values,
+							COL_SIMUKEY + "=\""
+									+ values.getAsString(COL_SIMUKEY) + "\"",
+							null);
 				}
 				break;
 			}
-		} catch(SQLException e) {
+		} catch (SQLException e) {
 			Log.w(TAG, "Tried to insert duplicate data, records not changed", e);
 			row = -1;
 		}
-		
-		if(row > 0) {
+
+		if (row > 0) {
 			Uri newUri;
-			
-			if(received) {
-				String id = String.format("%s%s", values.getAsString(COL_NODE), values.getAsString(COL_TIME));
+
+			if (received) {
+				String id = String.format("%s%s", values.getAsString(COL_NODE),
+						values.getAsString(COL_TIME));
 				newUri = Uri.withAppendedPath(uri, id);
-			} else if(status) {
-				newUri =  Uri.withAppendedPath(URI_STATUS, values.getAsString(COL_STATUSKEY));
+			} else if (status) {
+				newUri = Uri.withAppendedPath(URI_STATUS,
+						values.getAsString(COL_STATUSKEY));
 			} else {
-				newUri = ContentUris.withAppendedId(uri, row);
+				if (simulation) {
+					newUri = Uri.withAppendedPath(URI_SIMULATION,
+							values.getAsString(COL_SIMUKEY));
+				} else
+
+					newUri = ContentUris.withAppendedId(uri, row);
 			}
-			
+
 			Log.d(TAG, "Generating notification for " + newUri);
 			getContext().getContentResolver().notifyChange(newUri, null);
 			return newUri;
 		}
-		
+
 		Log.d(TAG, "No notification for " + uri);
 		return null;
 	}
-	
+
 	@Override
-	public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-			String sortOrder) {
+	public Cursor query(Uri uri, String[] projection, String selection,
+			String[] selectionArgs, String sortOrder) {
 		SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();
-		
+
 		// select correct table based on URI
-		switch(uriMatcher.match(uri)) {
-			case URI_RECEIVED_CODE:
+		switch (uriMatcher.match(uri)) {
+		case URI_RECEIVED_CODE:
 			queryBuilder.setTables(TABLE_INCOMING);
 			break;
-			
-			case URI_RECEIVED_ID_CODE:
+
+		case URI_RECEIVED_ID_CODE:
 			queryBuilder.setTables(TABLE_INCOMING);
 			String receivedId = uri.getLastPathSegment();
-			queryBuilder.appendWhere( COL_ID + "=\"" + receivedId + "\"");
+			queryBuilder.appendWhere(COL_ID + "=\"" + receivedId + "\"");
 			break;
-			
-			case URI_SENT_CODE:
+
+		case URI_SENT_CODE:
 			queryBuilder.setTables(TABLE_OUTGOING);
 			break;
-			
-			case URI_SENT_ID_CODE:
+
+		case URI_SENT_ID_CODE:
 			queryBuilder.setTables(TABLE_OUTGOING);
 			String sentId = uri.getLastPathSegment();
 			queryBuilder.appendWhere("_id = " + sentId);
 			break;
-			
-			case URI_CUSTOM_CODE:
+
+		case URI_CUSTOM_CODE:
 			queryBuilder.setTables(TABLE_TOSEND);
 			break;
-			
-			case URI_CUSTOM_ID_CODE:
+
+		case URI_CUSTOM_ID_CODE:
 			queryBuilder.setTables(TABLE_TOSEND);
 			String toSendId = uri.getLastPathSegment();
 			queryBuilder.appendWhere("rowid = " + toSendId);
 			break;
-			
-			case URI_STATUS_CODE:
+
+		case URI_STATUS_CODE:
 			queryBuilder.setTables(TABLE_STATUS);
 			break;
-			
-			case URI_STATUS_CUSTOM_CODE:
+
+		case URI_STATUS_CUSTOM_CODE:
 			queryBuilder.setTables(TABLE_STATUS);
 			String key = uri.getLastPathSegment();
 			queryBuilder.appendWhere(COL_STATUSKEY + "=\"" + key + "\"");
 			break;
-			
-			default:
+
+		case URI_SIMULATION_CODE:
+			queryBuilder.setTables(TABLE_SIMULATION);
+			break;
+
+		case URI_SIMULATION_CUSTOM_CODE:
+			queryBuilder.setTables(TABLE_SIMULATION);
+			String key2 = uri.getLastPathSegment();
+			queryBuilder.appendWhere(COL_SIMUKEY + "=\"" + key2 + "\"");
+			break;
+
+		default:
 			Log.w(TAG, "Unknown URI to query:" + uri);
 			return null;
 		}
-		
-		Cursor cursor = queryBuilder.query(
-			database, projection, selection, selectionArgs, null, null, sortOrder);
-		
+
+		Cursor cursor = queryBuilder.query(database, projection, selection,
+				selectionArgs, null, null, sortOrder);
+
 		return cursor;
 	}
-	
+
 	@Override
-	public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+	public int update(Uri uri, ContentValues values, String selection,
+			String[] selectionArgs) {
 		int rows = -1;
-		
-		switch(uriMatcher.match(uri)) {
-		
-			case URI_SENT_ID_CODE:
+
+		switch (uriMatcher.match(uri)) {
+
+		case URI_SENT_ID_CODE:
 			String id = uri.getLastPathSegment();
 			selection = "_id = \"" + id + "\"";
-			rows = database.update(TABLE_OUTGOING, values, selection, selectionArgs);
-			if(rows > 0) {
+			rows = database.update(TABLE_OUTGOING, values, selection,
+					selectionArgs);
+			if (rows > 0) {
 				Log.i(TAG, "Generating notification for " + uri);
 				getContext().getContentResolver().notifyChange(uri, null);
 			}
 			break;
-		
-			case URI_STATUS_CODE:
-			rows = database.update(TABLE_STATUS, values, selection, selectionArgs);
-			if(rows > 0) {
-				Uri newUri = Uri.withAppendedPath(URI_STATUS, values.getAsString(COL_STATUSKEY));
+
+		case URI_STATUS_CODE:
+			rows = database.update(TABLE_STATUS, values, selection,
+					selectionArgs);
+			if (rows > 0) {
+				Uri newUri = Uri.withAppendedPath(URI_STATUS,
+						values.getAsString(COL_STATUSKEY));
+				getContext().getContentResolver().notifyChange(newUri, null);
+			}
+			break;
+		case URI_SIMULATION_CODE:
+			rows = database.update(TABLE_SIMULATION, values, selection,
+					selectionArgs);
+			if (rows > 0) {
+				Uri newUri = Uri.withAppendedPath(URI_SIMULATION,
+						values.getAsString(COL_SIMUKEY));
 				getContext().getContentResolver().notifyChange(newUri, null);
 			}
 			break;
 		}
-		
+
 		return rows;
 	}
-	
+
 	@Override
 	public int delete(Uri uri, String selection, String[] selectionArgs) {
 		int count = 0;
-		
-		switch(uriMatcher.match(uri)) {
-			case URI_CUSTOM_CODE: 
+
+		switch (uriMatcher.match(uri)) {
+		case URI_CUSTOM_CODE:
 			count = database.delete(TABLE_TOSEND, selection, selectionArgs);
 			break;
-		
-			case URI_CUSTOM_ID_CODE:
+
+		case URI_CUSTOM_ID_CODE:
 			String id = uri.getLastPathSegment();
-			count = database.delete( TABLE_TOSEND, "rowid = " + id +
-	                    (!TextUtils.isEmpty(selection) ? " AND (" +
-	                    selection + ')' : ""), selectionArgs);
+			count = database.delete(TABLE_TOSEND,
+					"rowid = "
+							+ id
+							+ (!TextUtils.isEmpty(selection) ? " AND ("
+									+ selection + ')' : ""), selectionArgs);
 			break;
 		}
-		
-		if(count > 0)
+
+		if (count > 0)
 			getContext().getContentResolver().notifyChange(uri, null);
-		
+
 		return count;
 	}
 
@@ -357,5 +420,5 @@ public class MessagesProvider extends ContentProvider {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
+
 }

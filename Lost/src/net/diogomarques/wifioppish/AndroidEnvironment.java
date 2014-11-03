@@ -1,5 +1,7 @@
 package net.diogomarques.wifioppish;
 
+import gcm.DemoActivity;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -12,6 +14,8 @@ import net.diogomarques.wifioppish.sensors.ScreenOnSensor;
 import net.diogomarques.wifioppish.sensors.SensorGroup;
 import net.diogomarques.wifioppish.sensors.SensorGroup.SensorGroupKey;
 import net.diogomarques.wifioppish.structs.ConcurrentForwardingQueue;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -249,6 +253,19 @@ public class AndroidEnvironment implements IEnvironment {
 				timeout = mPreferences.getTWeb();
 				break;
 			case Stopped:
+
+				Intent svcIntent = new Intent(
+						"net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
+				
+				context.deleteDatabase("LOSTMessages");
+				context.stopService(svcIntent);
+				
+				Intent mStartActivity = new Intent(context, DemoActivity.class);
+				int mPendingIntentId = 123456;
+				PendingIntent mPendingIntent = PendingIntent.getActivity(context, mPendingIntentId,    mStartActivity, PendingIntent.FLAG_CANCEL_CURRENT);
+				AlarmManager mgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+				mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent);
+				System.exit(0);
 				return;
 			}
 			
@@ -337,6 +354,11 @@ public class AndroidEnvironment implements IEnvironment {
 
 	@Override
 	public Message createTextMessage(String contents) {
+		
+		//trying to correct a bug
+		if(nextState==State.Stopped){
+			return null;
+		}
 		double[] location = getMyLocation();
 		String nodeID = getMyNodeId();
 		
