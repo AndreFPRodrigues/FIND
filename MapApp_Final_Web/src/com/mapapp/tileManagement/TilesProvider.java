@@ -20,7 +20,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import com.google.android.gms.maps.model.Tile;
-import com.mapapp.tileManagement.web.DownloadTaskFinishedCallback;
+import com.mapapp.tileManagement.web.DownloadTaskFinishedCallback; 
 import com.mapapp.tileManagement.web.TileDownloadTask;
 import com.mapapp.tileManagement.web.WebTilesProvider;
 import com.google.android.gms.maps.model.TileProvider;
@@ -64,9 +64,16 @@ public class TilesProvider implements DownloadTaskFinishedCallback,
 		// and available for rendering
 		this.newTileHandler = newTileHandler;
 	}
-
+	
+	
+	private int lastZoom=0;
 	// Updates the tiles in the hashtable
 	public Tile fetchTiles(int x, int y, int zoom) {
+		
+		if(lastZoom!=zoom){
+			Log.d("gcm", "zoom:" +zoom);
+			lastZoom=zoom;
+		}
 		// We are using a separate object here for synchronizing
 		// Using the hashtable tiles will cause problems when we swap the
 		// pointers temp and tiles

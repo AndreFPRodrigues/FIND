@@ -42,8 +42,8 @@ public class WebTilesProvider implements DownloadTaskFinishedCallback
 	public void downloadTile(int x, int y, int z)
 	{
 		// Get the url in the right format
-		//String url = formatUrl(x, y, z);
-		String url =String.format("http://api.tiles.mapbox.com/v3/afrodrigues.i35a783b/%s/%s/%s.png", z,x,y);
+		String url = formatUrl(x, y, z);
+		//String url =String.format("http://api.tiles.mapbox.com/v3/afrodrigues.i35a783b/%s/%s/%s.png", z,x,y);
 		// Whenever using the HashSet pendingRequests we must
 		// make sure that no other thread is using it, we do that by
 		// using synchronized on the set whenever a code block uses the set 

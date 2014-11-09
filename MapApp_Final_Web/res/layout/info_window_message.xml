@@ -3,7 +3,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical" >
-
+ <ScrollView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
     <TableLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" >
@@ -167,5 +169,5 @@
                 android:paddingLeft="2dp" />
         </TableRow>
     </TableLayout>
-
+	</ScrollView>
 </LinearLayout>

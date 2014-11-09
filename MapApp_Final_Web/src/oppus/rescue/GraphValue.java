@@ -16,8 +16,8 @@ public class GraphValue {
 		return timestamp;
 	}
 
-	public int getValue() {
-		return value; 
+	public int getValue() { 
+		return value;  
 	}
 
 	public GraphValue(int value, long timestamp) {

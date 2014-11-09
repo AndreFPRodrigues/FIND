@@ -1,28 +1,15 @@
 package oppus.rescue;
 
 import java.io.BufferedReader;
-import com.jjoe64.graphview.GraphView.GraphViewData;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Scanner;
 import java.util.Stack;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import oppus.rescue.Victim.VictimNode;
 
@@ -38,22 +25,19 @@ import org.json.JSONObject;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
+import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.graphics.Color;
 import android.location.Location;
-import android.location.LocationListener;
-import android.os.Bundle;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Environment;
-import android.os.Handler;
-import android.text.Html;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
@@ -61,14 +45,10 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
-import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
-import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
@@ -79,15 +59,11 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
 import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.GraphView.LegendAlign;
-import com.jjoe64.graphview.GraphViewDataInterface;
+import com.jjoe64.graphview.GraphView.GraphViewData;
 import com.jjoe64.graphview.GraphViewSeries;
-import com.jjoe64.graphview.GraphViewSeries.GraphViewSeriesStyle;
 import com.jjoe64.graphview.GraphViewStyle.GridStyle;
 import com.jjoe64.graphview.LineGraphView;
-import com.jjoe64.graphview.ValueDependentColor;
 import com.mapapp.tileManagement.TilesProvider;
-import android.view.ViewGroup.LayoutParams;
 
 public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 
@@ -151,10 +127,16 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 	GraphViewData[] distance;
 
 	// demo
-	public static boolean demo = true;
-	public static DemoClusters dm;
+	// public static boolean demo = true;
+	// public static DemoClusters dm;
+	private Location location = null;
+	private final int RADIUS = 1;
 	private View rootview;
-	private int lastGraph = MICRO;
+	// private int lastGraph = MICRO;
+
+	private String uri_new = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims";
+	private String uri_timeStamp = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims/mintimestamp/";
+	private String uri_simu = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims/rescue/";
 
 	/**
 	 * Map and listeners initialisation Starts tile provider
@@ -232,9 +214,11 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 		boolean result = false;
 		try {
 			JSONArray jsonArray = new JSONArray(victims);
-			Log.i("RESCUE", "Number of entries  online" + jsonArray.length());
+			Log.i("RESCUE", "Number of entries  online " + jsonArray.length());
 			ContentValues[] nodes = new ContentValues[jsonArray.length()];
 			for (int i = 0; i < jsonArray.length(); i++) {
+				Log.i("RESCUE", "node: " + i);
+
 				JSONObject jsonObject = jsonArray.getJSONObject(i);
 				ContentValues cv = new ContentValues();
 				int safe = jsonObject.getInt("safe");
@@ -249,11 +233,11 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 				int screen = jsonObject.getInt("screen");
 				// int distance = jsonObject.getInt("distance");
 				int battery = jsonObject.getInt("battery");
+
 				if (lastUpdate < added)
 					lastUpdate = added;
-
 				cv.put(SQLittleObserver.COL_ADDED, added);
-				cv.put(SQLittleObserver.COL_ID, time + node);
+				cv.put(SQLittleObserver.COL_ID, node + time);
 				cv.put(SQLittleObserver.COL_NODE, node);
 				cv.put(SQLittleObserver.COL_TIME, time);
 				cv.put(SQLittleObserver.COL_MSG, msg);
@@ -267,7 +251,7 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 				cv.put(SQLittleObserver.COL_SAFE, (safe == 1) ? true : false);
 				nodes[i] = cv;
 				// addVictimMarker(node, lat, lon, msg, time, steps, screen, 0,
-				// battery, (safe == 1) ? true : false);
+				// battery, (safe == 1) ? true : false, true);
 				result = true;
 
 			}
@@ -280,17 +264,60 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 		return result;
 	}
 
+	/**
+	 * Checks for changes on FIND simulation status and runs actions accordingly
+	 * 
+	 * @param uri
+	 *            The exact update URI of LOST Status or null if unknown
+	 */
+	private String checkRegistSimulation() {
+		Uri uri = Uri
+				.parse("content://find.service.net.diogomarques.wifioppish.MessagesProvider/simulation");
+		Cursor c = rootview.getContext().getContentResolver()
+				.query(uri, null, "", null, "");
+
+		if (c.moveToFirst()) {
+			do {
+				if (c.getString(c.getColumnIndex("simukey")).equals(
+						"simulation")) {
+					return c.getString(c.getColumnIndex("simuvalue"));
+				}
+			} while (c.moveToNext());
+		}
+		return "";
+	}
+
 	void updateVictimsWebService() {
 		StringBuilder builder = new StringBuilder();
 		HttpClient client = new DefaultHttpClient();
 		HttpGet httpGet;
-		if (lastUpdate == -1) {
-			httpGet = new HttpGet(
-					"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims");
-		} else
-			httpGet = new HttpGet(
-					"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims/mintimestamp/"
-							+ (lastUpdate + 1));
+		/*
+		 * String simulation;
+		 * if((simulation=checkRegistSimulation()).length()>0){ httpGet = new
+		 * HttpGet( uri_simu + simulation+","+lastUpdate); }else{
+		 */
+
+		if (location != null) {
+			LatLng bottomRight = adjustCoordinates(RADIUS, 135);
+			LatLng topLeft = adjustCoordinates(RADIUS, 315);
+
+			httpGet = new HttpGet(uri_simu + topLeft.latitude + ","
+					+ topLeft.longitude + "," + bottomRight.latitude + ","
+					+ bottomRight.longitude + "," + lastUpdate);
+			Log.d(LT, uri_simu + topLeft.latitude + ","
+					+ topLeft.longitude + "," + bottomRight.latitude + ","
+					+ bottomRight.longitude + "," + lastUpdate);
+		} else {
+			if (lastUpdate == -1) {
+				httpGet = new HttpGet(uri_new);
+				Log.d(LT, uri_new);
+			} else{
+				httpGet = new HttpGet(uri_timeStamp + (lastUpdate + 1));
+				Log.d(LT, uri_timeStamp + (lastUpdate + 1));
+
+			}
+		}
+		// }
 		try {
 			HttpResponse response = client.execute(httpGet);
 			StatusLine statusLine = response.getStatusLine();
@@ -350,14 +377,20 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 
 			Victim v = victims.get(author);
 			if (v.checkUpdateMarker(timestamp)) {
-
+				Log.d("RESCUE", "ADDED NEW MAIN:" + author + " time:"
+						+ timestamp + " up:" + updated);
 				addMarker(lat, lon, message, false, author, timestamp, steps,
 						screen, distance, batery, safe, updated);
 
-			} else
+			} else {
 				v.addNode(new LatLng(lat, lon), timestamp, message, steps,
 						screen, distance, batery, safe);
+				Log.d("RESCUE", "ADDED NEW middle:" + author + " time:"
+						+ timestamp + " up:" + updated);
+			}
 		} else {
+			Log.d("RESCUE", "Creating NEW:" + author + " time:" + timestamp
+					+ " up:" + updated);
 			addMarker(lat, lon, message, true, author, timestamp, steps,
 					screen, distance, batery, safe, updated);
 
@@ -559,6 +592,7 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 						int arg2, long arg3) {
 					totalMessageClicks++;
 					viewNode(messagesID.get(arg2));
+					infoVictim.setVisibility(View.INVISIBLE);
 				}
 
 			});
@@ -635,14 +669,14 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 	public void onMapClick(LatLng arg0) {
 		totalMapClicks++;
 		if (auxTime != -1) {
-			Log.d("RESCUE", "added to total time aux:" + auxTime + " added:"
-					+ ((System.currentTimeMillis() - auxTime) / 1000));
+			// Log.d("RESCUE", "added to total time aux:" + auxTime + " added:"
+			// + ((System.currentTimeMillis() - auxTime) / 1000));
 			totalTimeStatsOpen += (((System.currentTimeMillis() - auxTime) / 1000));
 		}
 		auxTime = -1;
 		clearTempMarkers();
 		infoVictim(false, null);
-		Log.d(LT, "lat:" + arg0.latitude + " lon:" + arg0.longitude);
+		// Log.d(LT, "lat:" + arg0.latitude + " lon:" + arg0.longitude);
 		googleMap.setPadding(0, 0, 0, 0);
 
 	}
@@ -661,7 +695,9 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 			m = null;
 
 		}
-		if (focusMarker.equals(focus.getMarker()))
+
+		if (focusMarker != null && focus.getMarker() != null
+				&& focusMarker.equals(focus.getMarker()))
 			focusMarker.setIcon(BitmapDescriptorFactory
 					.defaultMarker(BitmapDescriptorFactory.HUE_RED));
 
@@ -673,35 +709,19 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 		return format.format(date).toString();
 	}
 
-	public void next() {
-		totalNext++;
-		totalMarkerClicks--;
-		String idNode = focusMarker.getSnippet();
-		int index;
-		if (idNode == null) {
-			index = tempMarkers.size() - 1;
-		} else
-			index = (Integer.parseInt(focusMarker.getSnippet()) - 1);
-		if (index < 0)
-			index = tempMarkers.size() - 1;
-		viewNode(index);
-	}
-
-	public void back() {
-		totalBack++;
-		totalMarkerClicks--;
-
-		String idNode = focusMarker.getSnippet();
-		int index;
-		if (idNode == null) {
-			index = 1;
-		} else {
-			if (tempMarkers.size() < 1)
-				return;
-			index = (Integer.parseInt(idNode) + 1) % tempMarkers.size();
-		}
-		viewNode(index);
-	}
+	/*
+	 * public void next() { totalNext++; totalMarkerClicks--; String idNode =
+	 * focusMarker.getSnippet(); int index; if (idNode == null) { index =
+	 * tempMarkers.size() - 1; } else index =
+	 * (Integer.parseInt(focusMarker.getSnippet()) - 1); if (index < 0) index =
+	 * tempMarkers.size() - 1; viewNode(index); }
+	 * 
+	 * public void back() { totalBack++; totalMarkerClicks--;
+	 * 
+	 * String idNode = focusMarker.getSnippet(); int index; if (idNode == null)
+	 * { index = 1; } else { if (tempMarkers.size() < 1) return; index =
+	 * (Integer.parseInt(idNode) + 1) % tempMarkers.size(); } viewNode(index); }
+	 */
 
 	/***********************************
 	 * Graph Methods
@@ -743,7 +763,7 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 
 		GraphView graphView = new LineGraphView(graphLayout.getContext(),
 				"Micro Movements");
-		graphView.setManualYAxisBounds(20, 0);
+		// graphView.setManualYAxisBounds(20, 0);
 
 		GraphViewSeries serie = new GraphViewSeries("Micro", null, micro);
 		switch (mode) {
@@ -793,6 +813,11 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 	public void microGraph() {
 		totalMicro++;
 		changeGraph(MICRO);
+
+	}
+
+	public void hideInfo() {
+		infoVictim.setVisibility(View.INVISIBLE);
 
 	}
 
@@ -856,105 +881,156 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 	/**
 	 * DEMO LOCATION DETECT
 	 */
-	final int VM = 0;
-	final int VV1 = 1;
-	final int VV2 = 2;
-	final int VV3 = 3;
-	int victimsSaved = 0;
-	boolean[] isSaving = new boolean[5];
-	boolean[] savedSpots = new boolean[5];
-	private long timeDemo;
+	// final int VM = 0;
+	// final int VV1 = 1;
+	// final int VV2 = 2;
+	// final int VV3 = 3;
+	// int victimsSaved = 0;
+	// boolean[] isSaving = new boolean[5];
+	// boolean[] savedSpots = new boolean[5];
+	// long timeDemo = 0;
+	//
+	// public void checkSaveVictims(Location location) {
+	// if (timeDemo == 0)
+	// return;
+	// int indexLocation = DemoClusters.savingPosition(location);
+	//
+	// if (indexLocation == 4) {
+	// if (DemoClusters.mode == DemoClusters.C2 && !DemoClusters.updated) {
+	// DemoClusters.updated = true;
+	// DemoClusters.updateMessageVictimSpots(this);
+	// notificationSound();
+	// }
+	// return;
+	// }
+	// if (indexLocation != -1)
+	// if (!isSaving[indexLocation] && !savedSpots[indexLocation]) {
+	//
+	// isSaving[indexLocation] = true;
+	// rootview.findViewById(R.id.saveButton).setVisibility(
+	// View.VISIBLE);
+	// }
+	//
+	// if (indexLocation == -1
+	// && rootview.findViewById(R.id.saveButton).getVisibility() ==
+	// View.VISIBLE) {
+	// rootview.findViewById(R.id.saveButton)
+	// .setVisibility(View.INVISIBLE);
+	// for (int i = 0; i < isSaving.length; i++)
+	// isSaving[i] = false;
+	//
+	// }
+	//
+	// }
+	//
+	// public void saved() {
+	// for (int i = 0; i < isSaving.length; i++) {
+	// if (isSaving[i]) {
+	// victimsSaved += DemoClusters.getSavedVictims(i);
+	// isSaving[i] = false;
+	// savedSpots[i] = true;
+	// TextView t = (TextView) rootview
+	// .findViewById(R.id.victimsSaved);
+	// t.setText(victimsSaved + "");
+	// Toast.makeText(
+	// rootview.getContext(),
+	// "SAVED " + DemoClusters.getSavedVictims(i) + " victims",
+	// Toast.LENGTH_LONG).show();
+	//
+	// if (victimsSaved >= 15) {
+	// timeDemo = System.currentTimeMillis() - timeDemo;
+	// Toast.makeText(
+	// rootview.getContext(),
+	// "CONGRATILATIONS YOU SAVED " + victimsSaved
+	// + " IN " + getDemoTime(), Toast.LENGTH_LONG)
+	// .show();
+	// Toast.makeText(
+	// rootview.getContext(),
+	// "CONGRATILATIONS YOU SAVED " + victimsSaved
+	// + " VICTIMS IN " + getDemoTime(),
+	// Toast.LENGTH_LONG).show();
+	// ((TextView) rootview.findViewById(R.id.timertitle))
+	// .setText("     Saved in:");
+	// ((TextView) rootview.findViewById(R.id.timer)).setText(" "
+	// + getDemoTime());
+	//
+	// if (auxTime != -1) {
+	// totalTimeStatsOpen += (((System.currentTimeMillis() - auxTime) / 1000));
+	// }
+	// DemoClusters.writeToLog(totalMarkerClicks, totalMapClicks,
+	// getDemoTime(), victimsSaved, totalMicro,
+	// totalScreen, totalTimeStatsOpen);
+	// }
+	//
+	// if (i == 1) {
+	// notificationSound();
+	// DemoClusters.updadeVictimSpots(this);
+	// }
+	// return;
+	// }
+	// }
+	//
+	// }
+	//
+	// private String getDemoTime() {
+	// int time = (int) timeDemo / 1000;
+	// int minutes = time / 60;
+	// int seconds = time % 60;
+	// return minutes + " minutes and " + seconds + "seconds";
+	// }
+	//
+	// public void startDemo() {
+	// Toast.makeText(rootview.getContext(), "Starting game",
+	// Toast.LENGTH_LONG).show();
+	// ((TextView) rootview.findViewById(R.id.timertitle))
+	// .setText("     Saved in:");
+	// timeDemo = System.currentTimeMillis();
+	// totalMarkerClicks = 0;
+	// totalMapClicks = 0;
+	// totalMessageClicks = 0;
+	// totalTimeStatsOpen = 0;
+	// totalScreen = 0;
+	// totalMicro = 0;
+	//
+	// }
 
-	public void checkSaveVictims(Location location) {
-
-		int indexLocation = DemoClusters.savingPosition(location);
-		if (indexLocation == 4) {
-			if (DemoClusters.mode == DemoClusters.C2 && !DemoClusters.updated) {
-				DemoClusters.updateMessageVictimSpots(this);
-				DemoClusters.updated = true;
-			}
-			return;
+	public void notificationSound() {
+		Context c = rootview.getContext();
+		try {
+			Uri notification = RingtoneManager
+					.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+			Ringtone r = RingtoneManager.getRingtone(c, notification);
+			r.play();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		if (indexLocation != -1)
-			if (!isSaving[indexLocation] && !savedSpots[indexLocation]) {
-
-				isSaving[indexLocation] = true;
-				rootview.findViewById(R.id.saveButton).setVisibility(
-						View.VISIBLE);
-			}
-
-		if (indexLocation == -1
-				&& rootview.findViewById(R.id.saveButton).getVisibility() == View.VISIBLE) {
-			rootview.findViewById(R.id.saveButton)
-					.setVisibility(View.INVISIBLE);
-			for (int i = 0; i < isSaving.length; i++)
-				isSaving[i] = false;
-
-		}
+		Log.d("RESCUE", "VIBRATING");
 
 	}
 
-	public void saved() {
-		for (int i = 0; i < isSaving.length; i++) {
-			if (isSaving[i]) {
-				victimsSaved += DemoClusters.getSavedVictims(i);
-				isSaving[i] = false;
-				savedSpots[i] = true;
-				TextView t = (TextView) rootview
-						.findViewById(R.id.victimsSaved);
-				t.setText(victimsSaved + "");
-				Toast.makeText(
-						rootview.getContext(),
-						"SAVED " + DemoClusters.getSavedVictims(i) + " victims",
-						Toast.LENGTH_LONG).show();
-
-				if (victimsSaved >= 15) {
-					timeDemo = System.currentTimeMillis() - timeDemo;
-					Toast.makeText(
-							rootview.getContext(),
-							"CONGRATILATIONS YOU SAVED " + victimsSaved
-									+ " IN " + getDemoTime(), Toast.LENGTH_LONG)
-							.show();
-					Toast.makeText(
-							rootview.getContext(),
-							"CONGRATILATIONS YOU SAVED " + victimsSaved
-									+ " VICTIMS IN " + getDemoTime(),
-							Toast.LENGTH_LONG).show();
-					((TextView) rootview.findViewById(R.id.timertitle))
-							.setText("     Saved in:");
-					((TextView) rootview.findViewById(R.id.timer)).setText(" "
-							+ getDemoTime());
-
-					if (auxTime != -1) {
-						totalTimeStatsOpen += (((System.currentTimeMillis() - auxTime) / 1000));
-					}
-					DemoClusters.writeToLog(totalMarkerClicks, totalMapClicks,
-							getDemoTime(), victimsSaved, totalMicro,
-							totalScreen, totalTimeStatsOpen);
-				}
-
-				if (i == 1) {
-					DemoClusters.updadeVictimSpots(this);
-				}
-				return;
-			}
-		}
+	public void setLocation(Location location) {
+		this.location = location;
 
 	}
 
-	private String getDemoTime() {
-		int time = (int) timeDemo / 1000;
-		int minutes = time / 60;
-		int seconds = time % 60;
-		return minutes + " minutes and " + seconds + "seconds";
-	}
+	private LatLng adjustCoordinates(int radius, int degrees) {
+		double lat = (location.getLatitude() * Math.PI) / 180;
 
-	public void startDemo() {
-		Toast.makeText(rootview.getContext(), "Starting game",
-				Toast.LENGTH_LONG).show();
-		((TextView) rootview.findViewById(R.id.timertitle))
-				.setText("     Saved in:");
-		timeDemo = System.currentTimeMillis();
+		double lon = (location.getLongitude() * Math.PI) / 180;
+
+		double d = (float) (((float) radius) / 6378.1);
+
+		double brng = degrees * Math.PI / 180;
+		// rad
+		double destLat = Math.asin(Math.sin(lat) * Math.cos(d) + Math.cos(lat)
+				* Math.sin(d) * Math.cos(brng));
+		double destLng = ((lon + Math.atan2(
+				Math.sin(brng) * Math.sin(d) * Math.cos(lat), Math.cos(d)
+						- Math.sin(lat) * Math.sin(destLat))) * 180)
+				/ Math.PI;
+		destLat = (destLat * 180) / Math.PI;
+
+		return new LatLng(destLat, destLng);
 
 	}
 

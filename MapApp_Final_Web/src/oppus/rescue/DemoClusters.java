@@ -15,13 +15,13 @@ import com.google.android.gms.maps.model.LatLng;
 import oppus.rescue.Victim.VictimNode;
 
 public class DemoClusters {
-	static ArrayList<VictimNodeDemo> VV2;
+	static ArrayList<VictimNodeDemo> VV2; 
 	static ArrayList<VictimNodeDemo> VV3;
 
 	private static ArrayList<String> log;
 
 	static Location vm;
-	static Location vv1;
+	static Location vv1; 
 	static Location vv2;
 	static Location vv3;
 	static Location update_vv3;
@@ -30,9 +30,9 @@ public class DemoClusters {
 	final static int iVV1 = 1;
 	final static int iVV2 = 2;
 	final static int iVV3 = 3;
-	final static int updateVV3 =4;
-	
-	static boolean updated=false;
+	final static int updateVV3 = 4;
+
+	static boolean updated = false;
 
 	final static int C1 = 0;
 	final static int C2 = 1;
@@ -53,6 +53,7 @@ public class DemoClusters {
 		vv1 = new Location("");
 		vv1.setLatitude(38.755934139);
 		vv1.setLongitude(-9.15700793);
+		// debug
 		// vv1.setLatitude(38.74444802367031);
 		// vv1.setLongitude(-9.157269448041916);
 		vv1.setAccuracy(3333);
@@ -73,17 +74,19 @@ public class DemoClusters {
 		} else {
 			vv3.setLatitude(38.756014);
 			vv3.setLongitude(-9.156285);
-			
+
 		}
 		vv3.setAccuracy(3333);
 		vv3.setBearing(333);
-		
-		
-		update_vv3= new Location("");
+
+		update_vv3 = new Location("");
 		update_vv3.setLatitude(38.755872);
 		update_vv3.setLongitude(-9.156785);
-//		update_vv3.setLatitude(38.744480);
-//		update_vv3.setLongitude( -9.157649);
+		// fcul
+		// update_vv3.setLatitude(38.755899);
+		// update_vv3.setLongitude(-9.157983);
+		// update_vv3.setLatitude(38.74444802367031);
+		// update_vv3.setLongitude(-9.157269448041916);
 		update_vv3.setAccuracy(3333);
 		update_vv3.setBearing(333);
 	}
@@ -131,7 +134,7 @@ public class DemoClusters {
 			} else
 				return 10;
 		case iVV3:
-				return 5;
+			return 5;
 		}
 
 		return 0;
@@ -157,7 +160,8 @@ public class DemoClusters {
 
 	}
 
-	public static void updateMessageVictimSpots(MapManager mapManager) {
+	public static synchronized void updateMessageVictimSpots(
+			MapManager mapManager) {
 		for (int i = 0; i < VV3.size(); i++) {
 			mapManager.addVictimMarker(VV3.get(i).node, VV3.get(i).lat,
 					VV3.get(i).lon, VV3.get(i).message, VV3.get(i).time,

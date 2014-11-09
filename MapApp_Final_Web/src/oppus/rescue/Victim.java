@@ -1,6 +1,7 @@
 package oppus.rescue;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 import org.json.JSONArray;
@@ -86,16 +87,33 @@ public class Victim {
 
 	public ArrayList<GraphValue> getScreenValues() {
 		ArrayList<GraphValue> result = new ArrayList<GraphValue>();
+		
+		HashMap <Long, Integer> ref= new HashMap<Long, Integer>();
+		ArrayList <Long> time = new ArrayList<Long>();
 		for (VictimNode vn : points) {
-			result.add(new GraphValue(vn.screen, vn.timestamp));
+			ref.put(vn.timestamp, vn.screen);
+			time.add(vn.timestamp);
+		}
+		Collections.sort(time);
+		for(int i=0;i< time.size();i++){
+			long timestamp = time.get(i);
+			result.add(new GraphValue(ref.get(timestamp), timestamp));
 		}
 		return result;
 	}
 	
 	public ArrayList<GraphValue> getMicroValues() {
 		ArrayList<GraphValue> result = new ArrayList<GraphValue>();
+		HashMap <Long, Integer> ref= new HashMap<Long, Integer>();
+		ArrayList <Long> time = new ArrayList<Long>();
 		for (VictimNode vn : points) {
-			result.add(new GraphValue(vn.steps, vn.timestamp));
+			ref.put(vn.timestamp, vn.steps);
+			time.add(vn.timestamp);
+		}
+		Collections.sort(time);
+		for(int i=0;i< time.size();i++){
+			long timestamp = time.get(i);
+			result.add(new GraphValue(ref.get(timestamp), timestamp));
 		}
 		return result;
 	}
