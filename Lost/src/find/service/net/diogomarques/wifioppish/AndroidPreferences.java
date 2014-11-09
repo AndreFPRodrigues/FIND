@@ -2,7 +2,7 @@ package find.service.net.diogomarques.wifioppish;
 
 import java.util.Random;
 
-import find.service.R;
+import find.service.R; 
 import find.service.net.diogomarques.wifioppish.IEnvironment.State;
 import android.content.Context;
 import android.content.SharedPreferences;
