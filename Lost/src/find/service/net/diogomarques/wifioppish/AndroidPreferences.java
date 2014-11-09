@@ -2,7 +2,7 @@ package find.service.net.diogomarques.wifioppish;
 
 import java.util.Random;
 
-import find.service.R; 
+import find.service.R;
 import find.service.net.diogomarques.wifioppish.IEnvironment.State;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -52,7 +52,7 @@ public class AndroidPreferences implements IDomainPreferences {
 
 	@Override
 	public int getTBeac() {
-		return getRandomTimeFromKey(R.string.key_t_beac);
+		return getRandomTimeFromKey(R.string.key_t_beac); 
 	}
 
 	@Override

@@ -501,7 +501,7 @@ public class AndroidEnvironment implements IEnvironment {
 		public void onChange(boolean selfChange, Uri uri) {
 			ContentResolver cr = environment.getAndroidContext().getContentResolver();
 			Cursor c = cr.query(
-					Uri.parse("content://net.diogomarques.wifioppish.MessagesProvider/customsend"), null, "", null, "");
+					Uri.parse("content://find.service.net.diogomarques.wifioppish.MessagesProvider/customsend"), null, "", null, "");
 
 			if(c.moveToFirst()) {
 				// get Messages and put them into sending queue
@@ -513,7 +513,7 @@ public class AndroidEnvironment implements IEnvironment {
 				} while(c.moveToNext());
 				
 				// delete custom Messages
-				cr.delete(Uri.parse("content://net.diogomarques.wifioppish.MessagesProvider/customsend"), "", null);
+				cr.delete(Uri.parse("content://find.service.net.diogomarques.wifioppish.MessagesProvider/customsend"), "", null);
 			}
 		}		
 	}

@@ -13,7 +13,6 @@ package find.service.gcm.map;
 
 import java.util.Hashtable;
 
-import android.app.Notification.Builder;
 import android.app.NotificationManager;
 import android.content.ContentValues;
 import android.content.Context;

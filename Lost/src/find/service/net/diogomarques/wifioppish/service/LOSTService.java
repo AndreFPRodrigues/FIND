@@ -104,7 +104,7 @@ public class LOSTService extends Service {
 			startForeground(NOTIFICATION_STICKY, getNotification());
 		}
 
-		return Service.START_STICKY;
+		return Service.START_STICKY; 
 	}
 
 	/**

@@ -20,7 +20,7 @@ import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
+import android.content.Intent; 
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -127,7 +127,7 @@ public class DemoActivity extends Activity {
 	// private CheckBox storage;
 	private RadioGroup associationStatus;
 
-	int associationState;
+	int associationState; 
 	int allowStorage;
 
 	final static String PATH = Environment.getExternalStorageDirectory()
@@ -135,7 +135,7 @@ public class DemoActivity extends Activity {
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+		super.onCreate(savedInstanceState); 
 		context = getApplicationContext();
 
 		setContentView(R.layout.service_main);

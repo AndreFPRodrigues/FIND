@@ -45,7 +45,6 @@
 
         <activity
             android:name="find.service.gcm.DemoActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
             android:exported="true"
             android:icon="@drawable/service_logo"
             android:label="Find Service"

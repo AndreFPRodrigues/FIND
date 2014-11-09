@@ -12,7 +12,7 @@ import oppus.rescue.MainActivity;
 
 import android.app.Dialog;
 import android.os.Environment;
-import android.os.Looper;
+import android.os.Looper; 
 import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.TextView; 
