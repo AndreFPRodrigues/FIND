@@ -71,7 +71,7 @@ public class Simulation {
 		final double f_lonE = Double.parseDouble(lonE);
 		final TilesProvider tp = new TilesProvider(DemoActivity.PATH);
 
-		//tp.downloadTilesInBound(f_latS, f_lonE, f_latE, f_lonS , MIN_ZOOM, MAX_ZOOM, c);
+		 tp.downloadTilesInBound(f_latS, f_lonE, f_latE, f_lonS , MIN_ZOOM, MAX_ZOOM, c);
 	}
 	
 	public static void preDownloadTiles(double f_latS, double f_lonS, double f_latE, double f_lonE , Context c ) {
@@ -79,7 +79,7 @@ public class Simulation {
 		final TilesProvider tp = new TilesProvider(DemoActivity.PATH);
 		Log.d("gcm" , "downloading " +  f_latS + " "+ f_lonS + " " + f_latE + " " + f_lonE);
 
-	//	tp.downloadTilesInBound(f_latS, f_lonE, f_latE, f_lonS , MIN_ZOOM, MAX_ZOOM, c);
+		tp.downloadTilesInBound(f_latS, f_lonE, f_latE, f_lonS , MIN_ZOOM, MAX_ZOOM, c);
 	}
 
 }
