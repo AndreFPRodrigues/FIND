@@ -1,0 +1,176 @@
+html,body { height:100%; margin: 0; padding: 0; cursor: default }
+#container { height: 100% }
+#contents { height:90% }
+
+#container .row { margin: 0; }
+
+#map {
+	height: 100%;
+	position:relative;
+	z-index: 0;
+}
+
+#slider-range {
+	width: 95%;
+	margin: auto;
+}
+
+#statusPanel {
+	padding-top: 25px;
+}
+
+#header {
+	height: 10%;
+	padding-top: 15px;
+	-webkit-box-shadow: 0 0 10px 5px rgba(0,0,0,0.4);
+	box-shadow: 0 0 10px 5px rgba(0,0,0,0.4);
+	position:relative;
+	z-index: 1;
+	background: #f8e7e7;
+}
+
+#tabs table th, #tabs table td {
+	padding: 5px;
+}
+
+table tr:hover {
+	background: #FAFAD2;
+}
+
+.old {
+	color: grey;
+}
+
+.timeline-tooltip {
+	background: #fff;
+	text-align: center;
+	display: none;
+}
+
+.ui-slider {
+	background: #ddd;
+}
+
+.ui-slider.shadow {
+	box-shadow: inset 0 1px 5px 0px rgba(0, 0, 0, .4),   
+                 0 1px 0 0px rgba(250, 250, 250, .4);  
+}
+
+#slider-liveness.green-red.ui-slider {
+	background: url(../imgs/sliders/green-red.png) center center no-repeat;
+}
+
+#slider-liveness.red-green.ui-slider {
+	background: url(../imgs/sliders/red-green.png) center center no-repeat;
+}
+
+#slider-liveness div.ui-slider-range {
+	background: #e9e42d;
+}
+
+#settings-range, #settings-group-range {
+	width: 99%;
+	margin:auto;
+	margin-top: 10px;
+}
+
+#tplLoading {
+	margin: auto;
+	text-align:center;
+	margin: 20px;
+}
+
+#tplLoading img {
+	margin-bottom: 10px;	
+}
+
+/* marker dialog */
+.marker-dialog .nav-links a:nth-child(0) {
+	margin-left: 5px;
+}
+
+.marker-dialog .nav-links a:nth-child(1) {
+	margin-right: 5px;
+}
+
+.marker-dialog div {
+	margin-bottom: 5px;
+}
+
+.marker-dialog .message-body {
+	background: #FAFAD2;
+	padding: 5px;
+}
+
+.marker-dialog .attention {
+	border-left: 5px solid orange;
+	padding: 3px;
+	background: #FFFFD6;
+}
+
+.marker-dialog .safe {
+	border-left: 5px solid green;
+	padding: 3px;
+	background: #E6FFE6;
+}
+
+.marker-dialog table {
+	width: 100%;
+	margin-bottom: 5px;
+}
+
+.marker-dialog table tr:first-child {
+	border-bottom: 1px solid #333;
+}
+
+.marker-dialog table tr:first-child:hover {
+	background: none;
+}
+
+.help-button, .settings-open, .pointer {
+	cursor: pointer;
+}
+
+.template {
+	display: none
+}
+
+.img-center {
+	text-align: center;
+	margin: inherit auto;
+}
+
+/* jQuery UI styles override */
+label {
+	font-weight: normal;
+}
+
+/* override jQuery Slider */
+.ui-slider-horizontal .ui-slider-handle {
+	background: #fff url(jqueryui/images/ui-icons_cc0000_256x240.png) no-repeat 0 -224px;
+	border: 1px solid #E60000;
+	-webkit-box-shadow: 0 0 5px 1px #E8E8E8;
+	box-shadow: 0 0 5px 1px #E8E8E8;
+}
+
+/* override jQuery Dialog */
+.no-close .ui-dialog-titlebar-close { display: none }
+.ui-dialog .ui-dialog-content { padding: 1em }
+
+/* override jQuery Tooltip */
+.ui-tooltip-content p { text-align: justify }
+
+/* override jQuery UI Tab styles */
+#tabs .ui-tabs {
+	padding: 0;
+}
+
+/* override jQuery UI Autocomplete styles */
+.ui-autocomplete {
+	box-shadow: 0 1px 5px 0px rgba(0, 0, 0, .4),   
+                 0 1px 0 0px rgba(250, 250, 250, .4);  
+}
+
+.ui-autocomplete  .ui-menu-item {
+	cursor: pointer;
+}
