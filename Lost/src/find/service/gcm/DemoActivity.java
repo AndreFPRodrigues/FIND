@@ -102,7 +102,7 @@ public class DemoActivity extends Activity {
 	/**
 	 * Tag used on log messages.
 	 */
-	static final String TAG = "GCM Demo";
+	static final String TAG = "gcm";
 
 	private GoogleCloudMessaging gcm;
 	private AtomicInteger msgId = new AtomicInteger();
@@ -142,19 +142,15 @@ public class DemoActivity extends Activity {
 		test = (TextView) findViewById(R.id.with);
 		serviceActivate = (Button) findViewById(R.id.sservice);
 
-		Log.d(TAG, "Service State: " + LOSTService.serviceActive);
-		Log.d(TAG, "Service toStop State: " + LOSTService.toStop);
-
 		if (LOSTService.toStop) {
-			test.setText("Stopping service, please restart after receving the service terminated notification");
+			test.setText("Waiting for internet connection to sync files");
 			associate.setEnabled(false);
 			associationStatus.setEnabled(false);
 			((RadioButton) findViewById(R.id.manual)).setEnabled(false);
 			((RadioButton) findViewById(R.id.pop)).setEnabled(false);
 			serviceActivate.setText("Stopping Service");
 			serviceActivate.setEnabled(false);
-			//LOSTService.serviceActive=false;
-			return ;
+			return;
 		}
 
 		if (LOSTService.serviceActive) {
@@ -198,21 +194,6 @@ public class DemoActivity extends Activity {
 			address = info.getMacAddress();
 			address = NodeIdentification.getNodeId(address);
 
-			/*
-			 * storage = (CheckBox) findViewById(R.id.checkBox1);
-			 * storage.setChecked(chckValue);
-			 * storage.setOnCheckedChangeListener(new OnCheckedChangeListener()
-			 * {
-			 * 
-			 * @Override public void onCheckedChanged(CompoundButton buttonView,
-			 * boolean isChecked) { SharedPreferences.Editor editor =
-			 * preferences.edit(); editor.putBoolean("storage", isChecked);
-			 * editor.commit(); allowStorage = isChecked ? 1 : 0;
-			 * savePreferences();
-			 * 
-			 * } });
-			 */
-
 			setAssociationStatus(idRadioButton);
 
 			associationStatus
@@ -222,13 +203,11 @@ public class DemoActivity extends Activity {
 						public void onCheckedChanged(RadioGroup group,
 								int checkedId) {
 							if (R.id.manual == checkedId) {
-
 								associationState = 0;
 							} else {
-
 								associationState = 2;
-
 							}
+							
 							SharedPreferences.Editor editor = preferences
 									.edit();
 							editor.putInt("associationState", associationState);
@@ -530,16 +509,16 @@ public class DemoActivity extends Activity {
 	}
 
 	private void stop() {
-		serviceActivate
-				.setText("Stopping service in next internet connection...");
+		serviceActivate.setText("Stopping service");
+		test.setText("Waiting for internet connection to sync files");
 		associate.setEnabled(false);
 		state_associated = false;
 		associationStatus.setEnabled(false);
 		((RadioButton) findViewById(R.id.manual)).setEnabled(false);
 		((RadioButton) findViewById(R.id.pop)).setEnabled(false);
 		serviceActivate.setEnabled(false);
-		regSimulationContentProvider("");
-		LOSTService.toStop=true;
+		regSimulationContentProvider(""); 
+		LOSTService.stop(context);
 
 	}
 

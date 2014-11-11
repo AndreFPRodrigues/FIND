@@ -146,12 +146,12 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 			while (true) {
 				if (new Date().getTime() > tick + mEnvironment.getPreferences().getScanPeriod()) {
 					if(isNetworkAvailable()){
-						Log.w("TextLog", "network available");
+						//Log.w("TextLog", "network available");
 						String pings = ping("www.google.pt");
-						Log.w("TextLog", "ping: " + pings);
+						//Log.w("TextLog", "ping: " + pings);
 
 						if(pings.contains("1 received")){
-							Log.w("TextLog", " Connected internet");
+							//Log.w("TextLog", " Connected internet");
 							connected=true;
 							listener.onInternetConnection();
 						}

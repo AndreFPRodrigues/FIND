@@ -25,9 +25,7 @@
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
-    
     <uses-permission android:name="android.permission.READ_LOGS" />
-    
 
     <permission
         android:name="com.example.gcm.permission.C2D_MESSAGE"
@@ -70,7 +68,7 @@
           services and hand them to the custom IntentService.
 
           The com.google.android.c2dm.permission.SEND permission is necessary
-          so only GCM services can send data messages for the app.
+          so only GCM services can send data messages for the app.
         -->
         <receiver
             android:name="find.service.gcm.GcmBroadcastReceiver"
@@ -104,6 +102,7 @@
                 <action android:name="find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE" />
             </intent-filter>
         </service>
+    
     </application>
 
 </manifest>
