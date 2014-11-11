@@ -10,17 +10,17 @@ import find.service.gcm.map.DownloadFile;
 import find.service.net.diogomarques.wifioppish.MessagesProvider;
 import find.service.net.diogomarques.wifioppish.NodeIdentification;
 import find.service.net.diogomarques.wifioppish.service.LOSTService;
-import find.service.org.json.JSONArray; 
-import find.service.org.json.JSONObject;  
+import find.service.org.json.JSONArray;
+import find.service.org.json.JSONObject;
 
 import android.app.Activity;
-import android.app.AlarmManager; 
+import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent; 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -83,9 +83,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
-
-
-
 /**
  * Main UI for the demo app.
  */
@@ -127,7 +124,7 @@ public class DemoActivity extends Activity {
 	// private CheckBox storage;
 	private RadioGroup associationStatus;
 
-	int associationState; 
+	int associationState;
 	int allowStorage;
 
 	final static String PATH = Environment.getExternalStorageDirectory()
@@ -135,16 +132,31 @@ public class DemoActivity extends Activity {
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState); 
+		super.onCreate(savedInstanceState);
 		context = getApplicationContext();
 
 		setContentView(R.layout.service_main);
 		associate = (Button) findViewById(R.id.associate);
 		associationStatus = (RadioGroup) findViewById(R.id.radioGroup1);
-		state_associated=false;
-		test = (TextView) findViewById(R.id.with); 
-
+		state_associated = false;
+		test = (TextView) findViewById(R.id.with);
 		serviceActivate = (Button) findViewById(R.id.sservice);
+
+		Log.d(TAG, "Service State: " + LOSTService.serviceActive);
+		Log.d(TAG, "Service toStop State: " + LOSTService.toStop);
+
+		if (LOSTService.toStop) {
+			test.setText("Stopping service, please restart after receving the service terminated notification");
+			associate.setEnabled(false);
+			associationStatus.setEnabled(false);
+			((RadioButton) findViewById(R.id.manual)).setEnabled(false);
+			((RadioButton) findViewById(R.id.pop)).setEnabled(false);
+			serviceActivate.setText("Stopping Service");
+			serviceActivate.setEnabled(false);
+			//LOSTService.serviceActive=false;
+			return ;
+		}
+
 		if (LOSTService.serviceActive) {
 			serviceActivate.setText("Stop Service");
 		}
@@ -247,9 +259,7 @@ public class DemoActivity extends Activity {
 
 				}
 
-
 				getActiveSimulations();
-				
 
 				Log.d(TAG, regid);
 
@@ -292,7 +302,7 @@ public class DemoActivity extends Activity {
 								+ allowStorage
 								+ ","
 								+ regid);
- 
+
 				try {
 					HttpResponse response = client.execute(httpGet);
 					StatusLine statusLine = response.getStatusLine();
@@ -321,8 +331,9 @@ public class DemoActivity extends Activity {
 	private boolean netCheckin() {
 		try {
 			ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-			NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-				
+			NetworkInfo mWifi = connManager
+					.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+
 			if (mWifi != null && mWifi.isConnectedOrConnecting()) {
 				return true;
 			} else {
@@ -337,17 +348,17 @@ public class DemoActivity extends Activity {
 		new AsyncTask<Void, Void, String>() {
 			@Override
 			protected String doInBackground(Void... params) {
-				if(activeSimulations.length==0){
+				if (activeSimulations.length == 0) {
 					ui.post(new Runnable() {
 						public void run() {
 							test.setText("No simulations available");
 							associate.setEnabled(false);
-							state_associated=false;
+							state_associated = false;
 						}
 					});
 					return "";
 				}
-				
+
 				StringBuilder builder = new StringBuilder();
 				HttpClient client = new DefaultHttpClient();
 				HttpGet httpGet;
@@ -401,8 +412,9 @@ public class DemoActivity extends Activity {
 								test.setText(registeredSimulation + ", "
 										+ location + " at " + date + " for "
 										+ duration + "min");
-								associate.setText("Disassociate from Simulation");
-								state_associated =true;
+								associate
+										.setText("Disassociate from Simulation");
+								state_associated = true;
 							}
 						});
 					}
@@ -455,7 +467,7 @@ public class DemoActivity extends Activity {
 					JSONObject jsonObject = jsonArray.getJSONObject(i);
 					activeSimulations[i] = new Simulation(jsonObject);
 				}
-				
+
 				checkAssociation();
 
 				return simulations;
@@ -509,9 +521,8 @@ public class DemoActivity extends Activity {
 	public void activateService(final View view) {
 		if (LOSTService.serviceActive) {
 			stop();
-			LOSTService.serviceActive = false;
 		} else {
-			Intent svcIntent = new Intent( 
+			Intent svcIntent = new Intent(
 					"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
 			context.startService(svcIntent);
 			serviceActivate.setText("Stop Service");
@@ -522,24 +533,25 @@ public class DemoActivity extends Activity {
 		serviceActivate
 				.setText("Stopping service in next internet connection...");
 		associate.setEnabled(false);
-		state_associated =false;
+		state_associated = false;
 		associationStatus.setEnabled(false);
 		((RadioButton) findViewById(R.id.manual)).setEnabled(false);
 		((RadioButton) findViewById(R.id.pop)).setEnabled(false);
 		serviceActivate.setEnabled(false);
 		regSimulationContentProvider("");
+		LOSTService.toStop=true;
 
 	}
 
 	// Select Simulation
 	public void associate(final View view) {
-		if(state_associated){
+		if (state_associated) {
 			disassociate();
 			return;
 		}
-		
-		state_associated=true;
-		
+
+		state_associated = true;
+
 		AlertDialog.Builder alertDialog = new AlertDialog.Builder(
 				DemoActivity.this);
 		LayoutInflater inflater = getLayoutInflater();
@@ -587,30 +599,6 @@ public class DemoActivity extends Activity {
 
 					}
 				});
-				/*
-				 * alert.setTitle("Simulation: " + name);
-				 * alert.setMessage("Password");
-				 * 
-				 * // Set an EditText view to get user input final EditText
-				 * input = new EditText(DemoActivity.this);
-				 * alert.setView(input);
-				 * 
-				 * alert.setPositiveButton("Ok", new
-				 * DialogInterface.OnClickListener() { public void
-				 * onClick(DialogInterface dialog, int whichButton) {
-				 * al.cancel();
-				 * 
-				 * }
-				 * 
-				 * });
-				 * 
-				 * alert.setNegativeButton("Cancel", new
-				 * DialogInterface.OnClickListener() { public void
-				 * onClick(DialogInterface dialog, int whichButton) { //
-				 * Canceled. } });
-				 * 
-				 * alert.show();
-				 */
 			}
 		});
 		al.setCanceledOnTouchOutside(true);
@@ -652,7 +640,7 @@ public class DemoActivity extends Activity {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-				state_associated=false;
+				state_associated = false;
 				return "";
 			}
 		}.execute(null, null, null);
@@ -837,7 +825,7 @@ public class DemoActivity extends Activity {
 				Log.i(TAG, "This device is not supported.");
 				finish();
 			}
-			return false; 
+			return false;
 		}
 		return true;
 	}
@@ -899,7 +887,7 @@ public class DemoActivity extends Activity {
 	 * @return Application's version code from the {@code PackageManager}.
 	 */
 	private static int getAppVersion(Context context) {
-		try { 
+		try {
 			PackageInfo packageInfo = context.getPackageManager()
 					.getPackageInfo(context.getPackageName(), 0);
 			return packageInfo.versionCode;

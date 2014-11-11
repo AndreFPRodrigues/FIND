@@ -279,7 +279,7 @@ public class TilesProvider implements DownloadTaskFinishedCallback,
 					for (int y = min_ty; y < max_ty + 1; y++) {
 						for (int x = min_tx; x < max_tx + 1; x++) {
 							fetchTiles(x, y, zoom);
-							Log.d("gcm", "x:" + x + " y:" + y + " z:" + zoom);
+							//Log.d("gcm", "x:" + x + " y:" + y + " z:" + zoom);
 						
 						}
 						if(zoom==19){
@@ -307,15 +307,8 @@ public class TilesProvider implements DownloadTaskFinishedCallback,
 		// Starts the thread by calling the run() method in its Runnable
 		).start();
 
-		Log.d("gcm", "START download!!!!!!!!!!!!!!!!!");
-		new AsyncTask<Void, Void, String>() {
-			@Override
-			protected String doInBackground(Void... params) {
-
-				return null;
-
-			}
-		}.execute(null, null, null);
+		Log.d("gcm", "Downloading tiles");
+	
 	}
 
 	@Override

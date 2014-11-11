@@ -2,6 +2,7 @@ package find.service.net.diogomarques.wifioppish;
 
 import find.service.gcm.DemoActivity;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -26,6 +27,7 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -157,7 +159,7 @@ public class AndroidEnvironment implements IEnvironment {
 		// custom client Messages
 		environment.cmo = new CustomMessagesObserver(null, environment);
 		environment.getAndroidContext().getContentResolver().registerContentObserver(
-				Uri.parse("content://net.diogomarques.wifioppish.MessagesProvider/customsend"), true, environment.cmo);
+				Uri.parse("content://find.service.net.diogomarques.wifioppish.MessagesProvider/customsend"), true, environment.cmo);
 		
 		// singleton setup
 		instance = environment;
@@ -253,12 +255,13 @@ public class AndroidEnvironment implements IEnvironment {
 				timeout = mPreferences.getTWeb();
 				break;
 			case Stopped:
+				saveLogCat();
+
 				Intent svcIntent = new Intent(
 						"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
 				
 				context.deleteDatabase("LOSTMessages");
 				context.stopService(svcIntent);
-				
 				Intent mStartActivity = new Intent(context, DemoActivity.class);
 				mStartActivity.putExtra("reset", true);
 				int mPendingIntentId = 123456;
@@ -274,6 +277,21 @@ public class AndroidEnvironment implements IEnvironment {
 			}
 		}
 		
+	}
+	
+	private void saveLogCat(){
+		String filePath = Environment.getExternalStorageDirectory() + "/logcat";
+		
+		try {
+			//String[] cmd = new String[] { "logcat", "-f", "/sdcard/myfilename", "-v", "time", "ActivityManager:W", "myapp:D" };
+
+			//Runtime.getRuntime().exec("logcat -f" + " /sdcard/Logcat.txt");
+			Runtime.getRuntime().exec(new String[]{"logcat", "-f", filePath+"_gcm.txt",  "-v", "time", "NodeID:V *:S" });
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override

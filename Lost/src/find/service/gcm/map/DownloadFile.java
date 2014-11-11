@@ -72,7 +72,7 @@ public class DownloadFile {
 			}
 			// close the output stream when complete //
 			fileOutput.close();
-			Log.d(LT, "finito db");
+			Log.d(LT, "Downloaded tile db");
 
 			return ;
 
