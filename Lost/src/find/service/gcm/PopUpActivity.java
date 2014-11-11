@@ -21,6 +21,7 @@ import android.util.Log;
 public class PopUpActivity extends Activity {
 	private Context c;
 	private final int threshold = (60 * 2 * 1000);
+	private final static String TAG = "gcm";
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -43,7 +44,7 @@ public class PopUpActivity extends Activity {
 		long handlerTimer = timeleft - threshold;
 		if (handlerTimer < 0)
 			handlerTimer = 0;
-		Log.d("gcm", "pop up timer:" + handlerTimer);
+		Log.d(TAG, "pop up timer:" + handlerTimer);
 
 		final AlertDialog alert = new AlertDialog.Builder(this)
 				.setIcon(R.drawable.service_logo)
@@ -71,6 +72,8 @@ public class PopUpActivity extends Activity {
 								generateNotification(c,
 										"You have been associate to " + name
 												+ ". Details in FIND Service.");
+								finish();
+
 							}
 
 						}).setNegativeButton("No", null).show();
@@ -94,7 +97,10 @@ public class PopUpActivity extends Activity {
 					setAlarm(date);
 
 					alert.dismiss();
+					finish();
+
 				}
+				
 			}
 		};
 
@@ -102,6 +108,8 @@ public class PopUpActivity extends Activity {
 			@Override
 			public void onDismiss(DialogInterface dialog) {
 				handler.removeCallbacks(runnable);
+				finish();
+
 			}
 		});
 
@@ -113,11 +121,11 @@ public class PopUpActivity extends Activity {
 		long timeleft = GcmBroadcastReceiver.timeToDate(date);
 		if (timeleft > 0) {
 			Long time = new GregorianCalendar().getTimeInMillis() + timeleft;
-			Log.d("gcm", "setting alarm " + timeleft);
+			Log.d(TAG, "setting alarm " + timeleft);
 			Intent intentAlarm = new Intent("startAlarm");
 			PendingIntent startPIntent = PendingIntent.getBroadcast(c, 0,
 					intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
-
+			
 			// create the object
 			AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
@@ -131,7 +139,7 @@ public class PopUpActivity extends Activity {
 	}
 
 	public static void cancelAlarm(Context c) {
-		Log.d("gcm", "canceling alarm");
+		Log.d(TAG, "canceling alarm");
 
 		Intent intentAlarm = new Intent("startAlarm");
 		PendingIntent startPIntent = PendingIntent.getBroadcast(c, 0,

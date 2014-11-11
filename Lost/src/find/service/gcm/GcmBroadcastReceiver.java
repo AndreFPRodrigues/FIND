@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ 
+ */
 package find.service.gcm;
 
 import java.io.BufferedReader;
@@ -25,7 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.http.HttpEntity; 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
@@ -58,11 +58,12 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.content.WakefulBroadcastReceiver;
-import android.util.Log; 
-import android.widget.Toast; 
+import android.util.Log;
+import android.widget.Toast;
 
 /**
  * This {@code WakefulBroadcastReceiver} takes care of creating and managing a
@@ -81,6 +82,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	private final int STOP = 3;
 	private final int LAST_UPDATE_THRESHOLD = 1000 * 60 * 120;
 	private final int RADIUS_DOWNLOAD = 1;
+	private final int ACCURACY=4000;
 	private Context c;
 
 	private long locationTimeout;
@@ -103,79 +105,69 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		c = context;
-		Intent svcIntent = null;
-		Log.d(TAG, "received notification");
-
+		Log.d(TAG, "received notification: " + intent.getAction());
 		setResultCode(Activity.RESULT_OK);
-		if (intent.getAction().equals("startAlarm")) {
-			boolean reset = intent.getBooleanExtra("reset", false);
-			if(reset){
-				Log.d("gcm", "reset");
-				return;
-			}
-			Log.d(TAG, "starting service");
-			svcIntent = new Intent(
-					"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
-			context.startService(svcIntent);
-
-			final SharedPreferences preferences = c.getApplicationContext()
-					.getSharedPreferences("Lost",
-							android.content.Context.MODE_PRIVATE);
-			boolean checkedLocation = preferences.getBoolean("location", false);
-			if (!checkedLocation) {
-				ls = new LocationSensor(c);
-				ls.startSensor();
-				isInSimulationLocation(preferences.getFloat("latS", 0),
-						preferences.getFloat("lonS", 0),
-						preferences.getFloat("latE", 0),
-						preferences.getFloat("lonE", 0));
-			}
-			return;
-		}
 		this.intent = intent;
+
+		//check if its alarm to start the service and enables it
+		if (intent.getAction().equals("startAlarm")) {
+			Log.d(TAG, "Handling alarm");
+
+			handleAlarm();
+			return ;
+		}
 		
-	
+		
 		// get data from push notification
 		type = intent.getExtras().getString("type");
-		
+		Log.d(TAG, "Type:" + type);
 
-		try { 
-			int tp = Integer.parseInt(type); 
+		//if received stop notification start the stopping service
+		try {
+			int tp = Integer.parseInt(type);
+			
 			if (tp == STOP) {
-				Log.d(TAG, "received notification to STOP1 ");
-
+				Log.d(TAG, "Stopping service");
+				generateNotification(c, "Terminating the service");
+				
 				regSimulationContentProvider("");
-				Log.d(TAG, "received notification to STOP 2");
-
-				LOSTService.serviceActive=false;
-				Log.d(TAG, "received notification to STOP 3");
-
-				return ;
+				LOSTService.toStop = true;
+			
+				
+				
+				return;
 			}
 		} catch (NumberFormatException e) {
-			Log.d("gcm", "not int " + type);
+			Log.d(TAG, "Converted type is not a number");
+
 		}
 		
+		Log.d(TAG, "Checking received new notification");
+
+		
+		//received new simulation notification, getting parameters
 		name = intent.getExtras().getString("name");
 		date = intent.getExtras().getString("date");
 		latS = Double.parseDouble(intent.getExtras().getString("latS"));
 		lonS = Double.parseDouble(intent.getExtras().getString("lonS"));
 		latE = Double.parseDouble(intent.getExtras().getString("latE"));
 		lonE = Double.parseDouble(intent.getExtras().getString("lonE"));
-		
+
+		Log.d(TAG, "date: " + date);
+
 		
 		// set timer for retriving location
 		long timeleft = timeToDate(date);
 		locationTimer = timeleft / 2;
 		locationTimeout = locationTimer / number_attempts;
 
-		Log.d(TAG, "ttimeleft:" + timeleft);
+		Log.d(TAG, "timeleft: " + timeleft);
 
 		// retriving last best location
 		Location l = getBestLocation();
 		int aux = 0;
 		if (l == null || oldLocation(l)) {
-			Log.d(TAG, "old location");
+			Log.d(TAG, "old or null location");
 
 			// if old location then try to get new location for half the time
 			// left until the starting date
@@ -183,38 +175,44 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			ls.startSensor();
 			getLocation();
 
-			Log.d(TAG, "old location out");
-
 		} else {
+			
+			//prompt pop up window
 			currentLoc = l;
 			startPopUp(new double[] { currentLoc.getLatitude(),
 					currentLoc.getLongitude() });
 		}
 
-		/*
-		 * try { int tp = Integer.parseInt(type);
-		 * 
-		 * switch (tp) { case CREATE_AUTO:
-		 * 
-		 * generateNotification(context, "You have been associate to " + name +
-		 * ". Details in FIND Service."); regSimulationContentProvider(name);
-		 * Simulation.preDownloadTiles(latS, lonS, latE, lonE, c); break; case
-		 * CREATE_POP: intent.setClass(context, TransparentActivity.class);
-		 * intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		 * context.startActivity(intent); break; case START: // start the
-		 * service, if not instanciated already
-		 * 
-		 * svcIntent = new Intent(
-		 * "net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
-		 * context.startService(svcIntent);
-		 * 
-		 * break;
-		 * 
-		 * } }
-		 * 
-		 * }
-		 */
+	}
+	
 
+	
+	private void handleAlarm(){
+		boolean reset = intent.getBooleanExtra("reset", false);
+		if (reset) {
+			Log.d(TAG, "reset");
+			return;
+		}
+		Log.d(TAG, "received alarm intent starting service");
+
+		Intent svcIntent = new Intent(
+				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
+		c.startService(svcIntent);
+
+		final SharedPreferences preferences = c.getApplicationContext()
+				.getSharedPreferences("Lost",
+						android.content.Context.MODE_PRIVATE);
+		boolean checkedLocation = preferences.getBoolean("location", false);
+		if (!checkedLocation) {
+			Log.d(TAG, "Confirm location is within bounds");
+
+			ls = new LocationSensor(c);
+			ls.startSensor();
+			isInSimulationLocation(preferences.getFloat("latS", 0),
+					preferences.getFloat("lonS", 0),
+					preferences.getFloat("latE", 0),
+					preferences.getFloat("lonE", 0));
+		}
 	}
 
 	private void startPopUp(double[] currentLoc) {
@@ -235,10 +233,10 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			center = new LatLng(currentLoc[0], currentLoc[1]);
 			isInside = isInLocation(currentLoc, latS, lonS, latE, lonE);
 			if (!isInside) {
-				Log.d(TAG, "not inside");
-
+				Log.d(TAG, "Stopping: not inside bounds");
 				return;
 			}
+			
 			LatLng start = adjustCoordinates(center, RADIUS_DOWNLOAD, 135);
 			intent.putExtra("latS", start.latitude);
 			intent.putExtra("lonS", start.longitude);
@@ -247,7 +245,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			intent.putExtra("lonE", end.longitude);
 
 		} else {
-			Log.d(TAG, "location undefined calculate center");
+			Log.d(TAG, "Location undefined: calculating center");
 
 			SharedPreferences.Editor editor = preferences.edit();
 			editor.putBoolean("location", false);
@@ -258,19 +256,22 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			editor.commit();
 
 			center = findCenter(latS, lonS, latE, lonE);
+			//get top left coordinate
 			LatLng start = adjustCoordinates(center, RADIUS_DOWNLOAD, 135);
 			intent.putExtra("latS", start.latitude);
 			intent.putExtra("lonS", start.longitude);
+			//get bottom right coordinate
 			LatLng end = adjustCoordinates(center, RADIUS_DOWNLOAD, 315);
 			intent.putExtra("latE", end.latitude);
 			intent.putExtra("lonE", end.longitude);
 		}
 
 		// timed popup dialog
-		Log.d(TAG, "call pop up");
+		Log.d(TAG, "Starting pop up");
 		intent.setClass(c, PopUpActivity.class);
 		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		c.startActivity(intent);
+		
 	}
 
 	private LatLng findCenter(double f_latS, double f_lonS, double f_latE,
@@ -284,11 +285,12 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		return new LatLng(f_latS + diffLat, f_lonE + diffLon);
 	}
 
+	//Get coordidates at a certain radius and degrees
 	private LatLng adjustCoordinates(LatLng center, int radius, int degrees) {
 		double lat = (center.latitude * Math.PI) / 180;
-		
+
 		double lon = (center.longitude * Math.PI) / 180;
-		
+
 		double d = (float) (((float) radius) / 6378.1);
 
 		double brng = degrees * Math.PI / 180;
@@ -301,16 +303,17 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 				/ Math.PI;
 		destLat = (destLat * 180) / Math.PI;
 
-		Log.d(TAG, "lat:" + lat + "->" + destLat + " lon:" + lon + "->"
-				+ destLng);
+		//Log.d(TAG, "lat:" + lat + "->" + destLat + " lon:" + lon + "->"
+			//	+ destLng);
 		return new LatLng(destLat, destLng);
 
 	}
 
+	//Primitive location checker
 	private boolean isInLocation(double[] loc, double f_latS, double f_lonS,
 			double f_latE, double f_lonE) {
 
-		Log.d("gcm", "values " + f_latS + " " + f_lonS + " " + f_latE + " "
+		Log.d(TAG, "values " + f_latS + " " + f_lonS + " " + f_latE + " "
 				+ f_lonE);
 		double lat = loc[0];
 		double lon = loc[1];
@@ -430,12 +433,15 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		Location networkLocation = getLocationByProvider(LocationManager.NETWORK_PROVIDER);
 		// if we have only one location available, the choice is easy
 		if (gpslocation == null) {
-			Log.d(TAG,
-					"No GPS Location available.");
-			if (networkLocation!=null && networkLocation.getAccuracy() < 1500)
-				return networkLocation; 
-			else
+			Log.d(TAG, "No GPS Location available.");
+			if (networkLocation != null && networkLocation.getAccuracy() < ACCURACY) {
+				Log.d(TAG, "Available accurate network location");
+				return networkLocation;
+
+			} else{
+				Log.d(TAG, "No Network Location available");
 				return null;
+			}
 		}
 		if (networkLocation == null) {
 			Log.d(TAG, "No Network Location available");
@@ -447,7 +453,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		boolean gpsIsOld = oldLocation(gpslocation);
 		boolean networkIsOld = oldLocation(networkLocation);
 		// gps is current and available, gps is better than network
-		if (!gpsIsOld ) {
+		if (!gpsIsOld) {
 			Log.d(TAG, "Returning current GPS Location");
 			return gpslocation;
 		}
@@ -510,12 +516,12 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		public void run() {
 			double[] value = (double[]) ls.getCurrentValue();
 			if (value[0] != 0) {
-				if (!isInLocation(value, lat, lon, lat2, lon2)){
+				if (!isInLocation(value, lat, lon, lat2, lon2)) {
 					stop();
 					Log.d(TAG, "In location");
 
-				} 
-			} else {  
+				}
+			} else {
 				Log.d(TAG, "No location");
 
 				isInSimulationLocation(lat, lon, lat2, lon2);
@@ -528,11 +534,10 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		Log.d(TAG, "Stopping service");
 		generateNotification(c, "The simulation has stopped");
 
-		
 		Intent svcIntent = new Intent(
 				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
-		final SharedPreferences prefs = c.getSharedPreferences(DemoActivity.class.getSimpleName(),
-				Context.MODE_PRIVATE);
+		final SharedPreferences prefs = c.getSharedPreferences(
+				DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
 		c.stopService(svcIntent);
 		regSimulationContentProvider("");
 		String regid = prefs.getString(DemoActivity.PROPERTY_REG_ID, "");
@@ -542,9 +547,13 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 		Intent mStartActivity = new Intent(c, DemoActivity.class);
 		int mPendingIntentId = 123456;
-		PendingIntent mPendingIntent = PendingIntent.getActivity(c, mPendingIntentId,    mStartActivity, PendingIntent.FLAG_CANCEL_CURRENT);
-		AlarmManager mgr = (AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
-		mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent);
+		PendingIntent mPendingIntent = PendingIntent.getActivity(c,
+				mPendingIntentId, mStartActivity,
+				PendingIntent.FLAG_CANCEL_CURRENT);
+		AlarmManager mgr = (AlarmManager) c
+				.getSystemService(Context.ALARM_SERVICE);
+		mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100,
+				mPendingIntent);
 		System.exit(0);
 		return;
 
@@ -557,6 +566,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	final Runnable runnable = new Runnable() {
 		@Override
 		public void run() {
+			Log.d(TAG, "Trying to get  location");
 			double[] value = (double[]) ls.getCurrentValue();
 			if (value[0] != 0) {
 				ls.stopSensor();

@@ -63,7 +63,7 @@ public class StateInternetConn extends AState {
 
 		try {
 			String endpoint;
-			if (LOSTService.serviceActive) { 
+			if (LOSTService.toStop) { 
 				endpoint = new StringBuilder()
 						.append(environment.getPreferences().getApiEndpoint())
 						.append('/').append(METHOD).toString();
@@ -136,8 +136,10 @@ public class StateInternetConn extends AState {
 			;
 		environment.deliverMessage("t_i_con timeout");
 
-		if (LOSTService.serviceActive == false) {
+		if (LOSTService.toStop == true) {
 			environment.gotoState(State.Stopped);
+			LOSTService.toStop = false;
+
 
 		} else
 

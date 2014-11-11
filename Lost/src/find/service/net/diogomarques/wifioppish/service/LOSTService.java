@@ -45,6 +45,8 @@ public class LOSTService extends Service {
 	private static IEnvironment environment;
 	
 	public static boolean serviceActive=false;
+	public static boolean toStop=false;
+
 	
 	@Override
 	public void onCreate() { 
