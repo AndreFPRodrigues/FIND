@@ -147,7 +147,6 @@ public class LOSTService extends Service {
 						}
 					} while (c.moveToNext());
 				}
-				Log.d("Machine State", serviceState); 
 				if (serviceState.equals("Stopping")) {
 					LOSTService.toStop = true;
 					environment.startStateLoop(State.Stopped);
