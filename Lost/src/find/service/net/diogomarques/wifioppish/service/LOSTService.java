@@ -1,55 +1,67 @@
 package find.service.net.diogomarques.wifioppish.service;
 
+import java.io.IOException;
+
 import find.service.R;
+import find.service.gcm.DemoActivity;
 import find.service.net.diogomarques.wifioppish.AndroidEnvironment;
 import find.service.net.diogomarques.wifioppish.AndroidPreferences;
 import find.service.net.diogomarques.wifioppish.IEnvironment;
+import find.service.net.diogomarques.wifioppish.MessagesProvider;
 import find.service.net.diogomarques.wifioppish.IEnvironment.State;
 import find.service.net.diogomarques.wifioppish.MyPreferenceActivity;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
  * Represents the service that runs on foreground. It uses the LOST-OppNet
- * business logic to create an opportunistic network and exchange messages. 
- * To start the service, an {@link Intent} 
- * must be created with the action <tt>net.diogomarques.wifioppish.service.LOSTService.START_SERVICE</tt>, 
+ * business logic to create an opportunistic network and exchange messages. To
+ * start the service, an {@link Intent} must be created with the action
+ * <tt>net.diogomarques.wifioppish.service.LOSTService.START_SERVICE</tt>,
  * followed by a call to {@link Activity#startService(Intent)}. Example:
  * 
  * <pre>
- * {@code
- * Intent i = new Intent("net.diogomarques.wifioppish.service.LOSTService.START_SERVICE"); 
- * startService(i);
+ * {
+ * 	&#064;code
+ * 	Intent i = new Intent(
+ * 			&quot;net.diogomarques.wifioppish.service.LOSTService.START_SERVICE&quot;);
+ * 	startService(i);
  * }
  * </pre>
  * 
- * This service also creates a {@link Notification} to ensure the service remains
- * active event the system is low on resources. 
+ * This service also creates a {@link Notification} to ensure the service
+ * remains active event the system is low on resources.
  * 
  * @author André Silva <asilva@lasige.di.fc.ul.pt>
  */
 public class LOSTService extends Service {
 
 	private final int NOTIFICATION_STICKY = 1;
-	private final String TAG = "LOST Service";
+	private final static String TAG = "LOST Service";
 	private NotificationManager notificationManager;
 	private static IEnvironment environment;
-	
-	public static boolean serviceActive=false;
-	public static boolean toStop=false;
 
-	
+	public static boolean serviceActive = false;
+	public static boolean toStop = false;
+	public static boolean synced = false;
+
 	@Override
-	public void onCreate() { 
+	public void onCreate() {
 		super.onCreate();
 		Log.i(TAG, "Service created");
 	}
@@ -58,16 +70,57 @@ public class LOSTService extends Service {
 	public void onDestroy() {
 		super.onDestroy();
 
-		if(environment != null){
+		if (environment != null) {
 			Log.i(TAG, "Stopped looped");
 
-			environment.stopStateLoop();
-			environment=null;
-			serviceActive=false;
+			//environment.stopStateLoop();
+			environment = null;
+			serviceActive = false;
 		}
 		stopSelf();
 		Log.i(TAG, "Service destroyed");
+
+	}
+
+	public static void stop(Context context) {
+		LOSTService.toStop = true;
+		saveLogCat();
+
+		if (environment != null) {
+			environment.stopStateLoop();
+			// environment=null;
+			serviceActive = false;
+		}
+
+		Intent intent = new Intent(context, LOSTService.class);
+		PendingIntent pintent = PendingIntent.getService(context, 0, intent, 0);
+		AlarmManager alarm = (AlarmManager) context
+				.getSystemService(Context.ALARM_SERVICE);
+		alarm.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 100,
+				pintent);
+		System.exit(0);
+		return;
+	}
+
+	public static void terminate(Context context) {
+		LOSTService.toStop=false;
+		LOSTService.serviceActive =false;
+		LOSTService.synced=false;
 		
+		Intent svcIntent = new Intent(
+				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
+
+		context.deleteDatabase("LOSTMessages");
+		
+		ContentValues cv = new ContentValues();
+		cv.put(MessagesProvider.COL_STATUSKEY, "service");
+		cv.put(MessagesProvider.COL_STATUSVALUE, "Disabled");
+		context.getContentResolver().insert(MessagesProvider.URI_STATUS, cv);
+		
+		context.stopService(svcIntent);
+		System.exit(0);
+
+
 	}
 
 	/**
@@ -78,11 +131,34 @@ public class LOSTService extends Service {
 
 			@Override
 			protected Void doInBackground(Void... params) {
-				environment.startStateLoop(State.Scanning);
+
+				// listener for state updates
+				ContentResolver cr = getContentResolver();
+				String URL = "content://find.service.net.diogomarques.wifioppish.MessagesProvider/status";
+				Uri uri = Uri.parse(URL);
+				Cursor c = getContentResolver().query(uri, null, "", null, "");
+				String serviceState = "";
+				if (c.moveToFirst()) {
+					do {
+						if (c.getString(c.getColumnIndex("statuskey")).equals(
+								"service")) {
+							serviceState = c.getString(c
+									.getColumnIndex("statusvalue"));
+						}
+					} while (c.moveToNext());
+				}
+				Log.d("Machine State", serviceState); 
+				if (serviceState.equals("Stopping")) {
+					LOSTService.toStop = true;
+					environment.startStateLoop(State.Stopped);
+
+				} else {
+					environment.startStateLoop(State.Scanning);
+				}
 				return null;
 			}
-			 
-		}.execute(); 
+
+		}.execute();
 	}
 
 	@Override
@@ -96,8 +172,8 @@ public class LOSTService extends Service {
 
 		if (environment == null) {
 			Log.i(TAG, "Creating new instance");
-			serviceActive=true;
-			
+			serviceActive = true;
+
 			// populate default preferences that may be missing
 			PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
@@ -106,7 +182,7 @@ public class LOSTService extends Service {
 			startForeground(NOTIFICATION_STICKY, getNotification());
 		}
 
-		return Service.START_STICKY; 
+		return Service.START_STICKY;
 	}
 
 	/**
@@ -139,6 +215,25 @@ public class LOSTService extends Service {
 
 		note.setLatestEventInfo(this, contentTitle, contentText, intent);
 		return note;
+	}
+
+	private static void saveLogCat() {
+		String filePath = Environment.getExternalStorageDirectory() + "/logcat";
+
+		try {
+			// String[] cmd = new String[] { "logcat", "-f",
+			// "/sdcard/myfilename", "-v", "time", "ActivityManager:W",
+			// "myapp:D" };
+
+			// Runtime.getRuntime().exec("logcat -f" + " /sdcard/Logcat.txt");
+			Runtime.getRuntime().exec(
+					new String[] { "logcat", "-f", filePath + "_gcm.txt", "-v",
+							"time", "NodeID:V *:S" });
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }

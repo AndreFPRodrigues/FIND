@@ -128,10 +128,10 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			
 			if (tp == STOP) {
 				Log.d(TAG, "Stopping service");
-				generateNotification(c, "Terminating the service");
+				generateNotification(c, "terminating the service");
 				
 				regSimulationContentProvider("");
-				LOSTService.toStop = true;
+				LOSTService.stop(c);
 			
 				
 				

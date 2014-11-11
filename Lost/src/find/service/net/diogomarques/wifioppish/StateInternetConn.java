@@ -63,14 +63,10 @@ public class StateInternetConn extends AState {
 
 		try {
 			String endpoint;
-			if (LOSTService.toStop) { 
-				endpoint = new StringBuilder()
-						.append(environment.getPreferences().getApiEndpoint())
-						.append('/').append(METHOD).toString();
-			}else{
-				endpoint = environment.getPreferences().getApiEndpoint()+
-				"/"	+METHOD+ "/legacy"; 
-			}
+			endpoint = new StringBuilder()
+					.append(environment.getPreferences().getApiEndpoint())
+					.append('/').append(METHOD).toString();
+
 			Log.d("Webservice", "Endpoint: " + endpoint);
 
 			HttpClient httpclient = new DefaultHttpClient();
@@ -136,17 +132,15 @@ public class StateInternetConn extends AState {
 			;
 		environment.deliverMessage("t_i_con timeout");
 
-		if (LOSTService.toStop == true) {
+		if (LOSTService.toStop) {
+			LOSTService.synced = true;
 			environment.gotoState(State.Stopped);
-			LOSTService.toStop = false;
-
-
-		} else
-
-		if (environment.getLastState() == State.Scanning) {
-			environment.gotoState(State.Beaconing);
 		} else {
-			environment.gotoState(State.Scanning);
+			if (environment.getLastState() == State.Scanning) {
+				environment.gotoState(State.Beaconing);
+			} else {
+				environment.gotoState(State.Scanning);
+			}
 		}
 	}
 }
