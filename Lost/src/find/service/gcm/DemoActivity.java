@@ -128,7 +128,8 @@ public class DemoActivity extends Activity {
 	int allowStorage;
 	
 	private final int MANUAL=0;
-	private final int POP_UP=1;
+	private final int AUTO=1;
+	private final int POP_UP=2;
 
 	final static String PATH = Environment.getExternalStorageDirectory()
 			+ "/mapapp/world.sqlitedb";;
@@ -245,6 +246,7 @@ public class DemoActivity extends Activity {
 				String action = intent.getAction();
 				if (action != null && action.equals("registerParticipant")) {
 					registerForSimulation(intent.getStringExtra("name"));
+					Log.d("debugg", "Register for simulation 0");
 				}
 				
 				//populates the active simulations window
@@ -269,12 +271,12 @@ public class DemoActivity extends Activity {
 		case MANUAL:
 			rt = (RadioButton) findViewById(R.id.manual);
 			break;
-
-		case POP_UP:
+			
+		case POP_UP: case AUTO:
 			rt = (RadioButton) findViewById(R.id.pop);
 			break;
 
-		}
+		} 
 		rt.toggle();
 	}
 	
@@ -394,7 +396,6 @@ public class DemoActivity extends Activity {
 				String simulations = builder.toString();
 				JSONArray jsonArray = new JSONArray(simulations);
 				if (jsonArray.length() > 0) {
-					activeSimulations = new Simulation[jsonArray.length()];
 					JSONObject jsonObject = jsonArray.getJSONObject(0);
 					registeredSimulation = jsonObject.getString("name");
 					location = jsonObject.getString("location");
@@ -409,7 +410,7 @@ public class DemoActivity extends Activity {
 
 						ui.post(new Runnable() {
 							public void run() {
-								Log.d("gcm", registeredSimulation);
+								Log.d("gcm", "Associado a"+ registeredSimulation);
 								test.setText(registeredSimulation + ", "
 										+ location + " at " + date + " for "
 										+ duration + "min");
@@ -470,6 +471,8 @@ public class DemoActivity extends Activity {
 				for (int i = 0; i < jsonArray.length(); i++) {
 					JSONObject jsonObject = jsonArray.getJSONObject(i);
 					activeSimulations[i] = new Simulation(jsonObject);
+					Log.d("debugg", "Get active simulation " + i);
+
 				}
 
 				checkAssociation();
@@ -575,10 +578,16 @@ public class DemoActivity extends Activity {
 		final ListView lv = (ListView) convertView.findViewById(R.id.listView1);
 		lv.setBackgroundColor(Color.WHITE);
 		String[] simu = new String[activeSimulations.length];
+		
+		Log.d("debugg", "Size: " + activeSimulations.length );
+
 		for (int i = 0; i < simu.length; i++) {
+			Log.d("debugg", "Name" + activeSimulations[i].getName() );
+
 			simu[i] = activeSimulations[i].getName() + ", "
 					+ activeSimulations[i].getLocation();
 		}
+		Log.d(TAG," aye" );
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
 				android.R.layout.simple_list_item_1, simu);
 		lv.setAdapter(adapter);
@@ -601,7 +610,7 @@ public class DemoActivity extends Activity {
 
 				ui.post(new Runnable() {
 					public void run() {
-						// Log.d("gcm", registeredSimulation);
+						Log.d("debugg", "associate to" + registeredSimulation );
 						test.setText(activeSimulations[p].toString());
 						associate.setText("Disassociate from Simulation");
 

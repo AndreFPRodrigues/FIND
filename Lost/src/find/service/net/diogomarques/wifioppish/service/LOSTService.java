@@ -1,6 +1,8 @@
 package find.service.net.diogomarques.wifioppish.service;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.util.Date;
 
 import find.service.R;
 import find.service.gcm.DemoActivity;
@@ -85,7 +87,7 @@ public class LOSTService extends Service {
 	public static void stop(Context context) {
 		LOSTService.toStop = true;
 		saveLogCat();
-
+		
 		if (environment != null) {
 			environment.stopStateLoop();
 			// environment=null;
@@ -221,8 +223,9 @@ public class LOSTService extends Service {
 
 		try {
 			
+
 			Runtime.getRuntime().exec(
-					new String[] { "logcat", "-f", filePath + "_gcm.txt", "-v",
+					new String[] { "logcat", "-f", filePath + "_FIND.txt", "-v",
 							"time", "dalvikvm:S *:V" });
 			Runtime.getRuntime().exec(
 					new String[] { "logcat", "-c"});

@@ -34,6 +34,8 @@ public class Simulation {
 		lonS = jsonObject.getString("lonS");
 		latE = jsonObject.getString("latE");
 		lonE = jsonObject.getString("lonE");
+		Log.d("debugg", "json create " + name);
+
 
 	}
 
