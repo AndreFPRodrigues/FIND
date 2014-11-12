@@ -220,11 +220,7 @@ public class LOSTService extends Service {
 		String filePath = Environment.getExternalStorageDirectory() + "/logcat";
 
 		try {
-			// String[] cmd = new String[] { "logcat", "-f",
-			// "/sdcard/myfilename", "-v", "time", "ActivityManager:W",
-			// "myapp:D" };
-
-			// Runtime.getRuntime().exec("logcat -f" + " /sdcard/Logcat.txt");
+			
 			Runtime.getRuntime().exec(
 					new String[] { "logcat", "-f", filePath + "_gcm.txt", "-v",
 							"time", "dalvikvm:S *:V" });

@@ -75,14 +75,14 @@ import android.widget.Toast;
  */
 
 public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
-	private final String TAG = "gcm";
+	private final String TAG = "GCM_Receiver";
 	private final int CREATE_AUTO = 0;
 	private final int CREATE_POP = 1;
 	private final int START = 2;
 	private final int STOP = 3;
 	private final int LAST_UPDATE_THRESHOLD = 1000 * 60 * 120;
 	private final int RADIUS_DOWNLOAD = 1;
-	private final int ACCURACY=4000;
+	private final int ACCURACY = 4000;
 	private Context c;
 
 	private long locationTimeout;
@@ -109,43 +109,38 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		setResultCode(Activity.RESULT_OK);
 		this.intent = intent;
 
-		//check if its alarm to start the service and enables it
+		// check if its alarm to start the service and enables it
 		if (intent.getAction().equals("startAlarm")) {
 			Log.d(TAG, "Handling alarm");
 
 			handleAlarm();
-			return ;
+			return;
 		}
-		
-		
+
 		// get data from push notification
 		type = intent.getExtras().getString("type");
 		Log.d(TAG, "Type:" + type);
 
-		//if received stop notification start the stopping service
+		// if received stop notification start the stopping service
 		try {
 			int tp = Integer.parseInt(type);
-			
+
 			if (tp == STOP) {
 				Log.d(TAG, "Stopping service");
 				generateNotification(c, "terminating the service");
-				
+
 				regSimulationContentProvider("");
 				LOSTService.stop(c);
-			
-				
-				
 				return;
 			}
 		} catch (NumberFormatException e) {
 			Log.d(TAG, "Converted type is not a number");
 
 		}
-		
+
 		Log.d(TAG, "Checking received new notification");
 
-		
-		//received new simulation notification, getting parameters
+		// received new simulation notification, getting parameters
 		name = intent.getExtras().getString("name");
 		date = intent.getExtras().getString("date");
 		latS = Double.parseDouble(intent.getExtras().getString("latS"));
@@ -155,7 +150,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 		Log.d(TAG, "date: " + date);
 
-		
 		// set timer for retriving location
 		long timeleft = timeToDate(date);
 		locationTimer = timeleft / 2;
@@ -176,18 +170,19 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			getLocation();
 
 		} else {
-			
-			//prompt pop up window
+
+			// prompt pop up window
 			currentLoc = l;
 			startPopUp(new double[] { currentLoc.getLatitude(),
 					currentLoc.getLongitude() });
 		}
 
 	}
-	
 
-	
-	private void handleAlarm(){
+	/**
+	 * Handles the start service alarm
+	 */
+	private void handleAlarm() {
 		boolean reset = intent.getBooleanExtra("reset", false);
 		if (reset) {
 			Log.d(TAG, "reset");
@@ -215,6 +210,11 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		}
 	}
 
+	/**
+	 * Prompt timed pop-up asking if the user wishes to associate himself with
+	 * if it timeouts it automatically associates the user
+	 * @param currentLoc
+	 */
 	private void startPopUp(double[] currentLoc) {
 
 		final SharedPreferences preferences = c.getApplicationContext()
@@ -236,7 +236,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 				Log.d(TAG, "Stopping: not inside bounds");
 				return;
 			}
-			
+
 			LatLng start = adjustCoordinates(center, RADIUS_DOWNLOAD, 135);
 			intent.putExtra("latS", start.latitude);
 			intent.putExtra("lonS", start.longitude);
@@ -256,11 +256,11 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			editor.commit();
 
 			center = findCenter(latS, lonS, latE, lonE);
-			//get top left coordinate
+			// get top left coordinate
 			LatLng start = adjustCoordinates(center, RADIUS_DOWNLOAD, 135);
 			intent.putExtra("latS", start.latitude);
 			intent.putExtra("lonS", start.longitude);
-			//get bottom right coordinate
+			// get bottom right coordinate
 			LatLng end = adjustCoordinates(center, RADIUS_DOWNLOAD, 315);
 			intent.putExtra("latE", end.latitude);
 			intent.putExtra("lonE", end.longitude);
@@ -271,7 +271,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		intent.setClass(c, PopUpActivity.class);
 		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		c.startActivity(intent);
-		
+
 	}
 
 	private LatLng findCenter(double f_latS, double f_lonS, double f_latE,
@@ -285,7 +285,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		return new LatLng(f_latS + diffLat, f_lonE + diffLon);
 	}
 
-	//Get coordidates at a certain radius and degrees
+	// Get coordidates at a certain radius and degrees
 	private LatLng adjustCoordinates(LatLng center, int radius, int degrees) {
 		double lat = (center.latitude * Math.PI) / 180;
 
@@ -303,13 +303,13 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 				/ Math.PI;
 		destLat = (destLat * 180) / Math.PI;
 
-		//Log.d(TAG, "lat:" + lat + "->" + destLat + " lon:" + lon + "->"
-			//	+ destLng);
+		// Log.d(TAG, "lat:" + lat + "->" + destLat + " lon:" + lon + "->"
+		// + destLng);
 		return new LatLng(destLat, destLng);
 
 	}
 
-	//Primitive location checker
+	// Primitive location checker
 	private boolean isInLocation(double[] loc, double f_latS, double f_lonS,
 			double f_latE, double f_lonE) {
 
@@ -355,6 +355,12 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		return timeUnit.convert(diffInMillies, TimeUnit.MILLISECONDS);
 	}
 
+	/**
+	 * Generate Notification
+	 * 
+	 * @param context
+	 * @param message
+	 */
 	private static void generateNotification(Context context, String message) {
 		int icon = R.drawable.service_logo;
 		long when = System.currentTimeMillis();
@@ -434,11 +440,12 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		// if we have only one location available, the choice is easy
 		if (gpslocation == null) {
 			Log.d(TAG, "No GPS Location available.");
-			if (networkLocation != null && networkLocation.getAccuracy() < ACCURACY) {
+			if (networkLocation != null
+					&& networkLocation.getAccuracy() < ACCURACY) {
 				Log.d(TAG, "Available accurate network location");
 				return networkLocation;
 
-			} else{
+			} else {
 				Log.d(TAG, "No Network Location available");
 				return null;
 			}
@@ -510,7 +517,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			this.lat2 = lat2;
 			this.lon = lon;
 			this.lon2 = lon2;
-
 		}
 
 		public void run() {
@@ -518,18 +524,21 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			if (value[0] != 0) {
 				if (!isInLocation(value, lat, lon, lat2, lon2)) {
 					stop();
-					Log.d(TAG, "In location");
-
+					Log.d(TAG, "Not in location");
 				}
-			} else {
-				Log.d(TAG, "No location");
+				Log.d(TAG, "In location");
 
+			} else {
+				Log.d(TAG, "Undefined location");
 				isInSimulationLocation(lat, lon, lat2, lon2);
 
 			}
 		}
 	}
 
+	/**
+	 * Stops the service the user is not in location and deletes all points
+	 */
 	private void stop() {
 		Log.d(TAG, "Stopping service");
 		generateNotification(c, "The simulation has stopped");
@@ -579,6 +588,10 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		}
 	};
 
+	/**
+	 * Try to get gps location "number_attemps" times, if it fails prompt the
+	 * pop up
+	 */
 	private void getLocation() {
 		if (attempts < number_attempts) {
 			handler.postDelayed(runnable, locationTimeout);
@@ -591,31 +604,23 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 	}
 
+	/**
+	 * Verify if
+	 * 
+	 * @param lat
+	 *            - top left latitude
+	 * @param lon
+	 *            - top left longitude
+	 * @param lat2
+	 *            - bottom right latitude
+	 * @param lon2
+	 *            - bottom right longitude
+	 */
 	private void isInSimulationLocation(float lat, float lon, float lat2,
 			float lon2) {
 
 		verifyLoc.postDelayed(new MyRunnable(lat, lon, lat2, lon2), 30000);
 
 	}
-
-	public boolean doLocationUpdate(Location l, boolean force) {
-		if (l == null) {
-			Log.d(TAG, "Empty location");
-			if (force)
-				Toast.makeText(c, "Current location not available",
-						Toast.LENGTH_SHORT).show();
-			return false;
-		}
-		if (l.getAccuracy() >= currentLoc.getAccuracy()
-				&& l.distanceTo(currentLoc) < l.getAccuracy() && !force) {
-			Log.d(TAG, "Accuracy got worse and we are still "
-					+ "within the accuracy range.. Not updating");
-			return false;
-		}
-		currentLoc = l;
-
-		return true;
-	}
-	// upload/store your location here
 
 }

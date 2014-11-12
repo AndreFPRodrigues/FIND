@@ -21,9 +21,9 @@ public class Simulation {
 	String lonS;
 	String latE;
 	String lonE;
-	
-	private final static int MIN_ZOOM =0;
-	private final static int MAX_ZOOM =17;
+
+	private final static int MIN_ZOOM = 0;
+	private final static int MAX_ZOOM = 17;
 
 	public Simulation(JSONObject jsonObject) {
 		name = jsonObject.getString("name");
@@ -61,25 +61,37 @@ public class Simulation {
 	public String toString() {
 		return name + ", " + location + " " + getDate() + " for " + duration
 				+ "min";
-	} 
+	}
 
-	public void activate( Context c ) {
+	/**
+	 * Start tile provider and download map tiles
+	 * 
+	 * @param c
+	 */
+	public void activate(Context c) {
 		final double f_latS = Double.parseDouble(latS);
 		final double f_lonS = Double.parseDouble(lonS);
-
 		final double f_latE = Double.parseDouble(latE);
 		final double f_lonE = Double.parseDouble(lonE);
 		final TilesProvider tp = new TilesProvider(DemoActivity.PATH);
-
-		 tp.downloadTilesInBound(f_latS, f_lonE, f_latE, f_lonS , MIN_ZOOM, MAX_ZOOM, c);
+		tp.downloadTilesInBound(f_latS, f_lonE, f_latE, f_lonS, MIN_ZOOM,
+				MAX_ZOOM, c);
 	}
-	
-	public static void preDownloadTiles(double f_latS, double f_lonS, double f_latE, double f_lonE , Context c ) {
-		
-		final TilesProvider tp = new TilesProvider(DemoActivity.PATH);
-		Log.d("gcm" , "downloading " +  f_latS + " "+ f_lonS + " " + f_latE + " " + f_lonE);
 
-		tp.downloadTilesInBound(f_latS, f_lonE, f_latE, f_lonS , MIN_ZOOM, MAX_ZOOM, c);
+	/**
+	 * Download map tiles
+	 * 
+	 * @param c
+	 */
+	public static void preDownloadTiles(double f_latS, double f_lonS,
+			double f_latE, double f_lonE, Context c) {
+
+		final TilesProvider tp = new TilesProvider(DemoActivity.PATH);
+		Log.d("gcm", "downloading " + f_latS + " " + f_lonS + " " + f_latE
+				+ " " + f_lonE);
+
+		tp.downloadTilesInBound(f_latS, f_lonE, f_latE, f_lonS, MIN_ZOOM,
+				MAX_ZOOM, c);
 	}
 
 }
