@@ -126,6 +126,9 @@ public class DemoActivity extends Activity {
 
 	int associationState;
 	int allowStorage;
+	
+	private final int MANUAL=0;
+	private final int POP_UP=1;
 
 	final static String PATH = Environment.getExternalStorageDirectory()
 			+ "/mapapp/world.sqlitedb";;
@@ -134,7 +137,6 @@ public class DemoActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		context = getApplicationContext();
-
 		setContentView(R.layout.service_main);
 		associate = (Button) findViewById(R.id.associate);
 		associationStatus = (RadioGroup) findViewById(R.id.radioGroup1);
@@ -142,6 +144,7 @@ public class DemoActivity extends Activity {
 		test = (TextView) findViewById(R.id.with);
 		serviceActivate = (Button) findViewById(R.id.sservice);
 
+		//Check if the service is stopping and blocks interface
 		if (LOSTService.toStop) {
 			test.setText("Waiting for internet connection to sync files");
 			associate.setEnabled(false);
@@ -152,12 +155,16 @@ public class DemoActivity extends Activity {
 			serviceActivate.setEnabled(false);
 			return;
 		}
-
+		
+		//Check service state and changes the button text
 		if (LOSTService.serviceActive) {
 			serviceActivate.setText("Stop Service");
 		}
 
+		//checks if there is internet connection
 		if (!netCheckin()) {
+			
+			//Blocks all the association and service preferences, only allows the user to start/stop the service
 			test.setText("FIND Service requires internet connection to alter preferences "
 					+ "please connect via WIFI and restart the application");
 			Toast.makeText(getApplicationContext(),
@@ -172,7 +179,9 @@ public class DemoActivity extends Activity {
 			((RadioButton) findViewById(R.id.pop)).setEnabled(false);
 
 		} else {
-
+			
+			//Checks if the BD responsible for the tiles exits, if not download the file from the server
+			// set the tile provider and database
 			File bd = new File(Environment.getExternalStorageDirectory()
 					.toString() + "/mapapp/world.sqlitedb");
 			DownloadFile d;
@@ -180,22 +189,22 @@ public class DemoActivity extends Activity {
 				d = new DownloadFile();
 			}
 
-			// set the tile provider and database
 
 			final SharedPreferences preferences = getApplicationContext()
 					.getSharedPreferences("Lost",
 							android.content.Context.MODE_PRIVATE);
-			// boolean chckValue = preferences.getBoolean("storage", true);
 			int idRadioButton = preferences.getInt("associationState", 2);
-
 			ui = new Handler();
 			WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 			WifiInfo info = manager.getConnectionInfo();
+			
+			//gets mac_address (user identification)
 			address = info.getMacAddress();
 			address = NodeIdentification.getNodeId(address);
 
 			setAssociationStatus(idRadioButton);
 
+			//Service preferences listener
 			associationStatus
 					.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
 
@@ -203,9 +212,9 @@ public class DemoActivity extends Activity {
 						public void onCheckedChanged(RadioGroup group,
 								int checkedId) {
 							if (R.id.manual == checkedId) {
-								associationState = 0;
+								associationState = MANUAL;
 							} else {
-								associationState = 2;
+								associationState = POP_UP;
 							}
 							
 							SharedPreferences.Editor editor = preferences
@@ -219,7 +228,7 @@ public class DemoActivity extends Activity {
 
 			// Check device for Play Services APK. If check succeeds, proceed
 			// with
-			// GCM registration.
+			// GCM registration and get active simulations. 
 			if (checkPlayServices()) {
 				gcm = GoogleCloudMessaging.getInstance(this);
 				regid = getRegistrationId(context);
@@ -230,14 +239,15 @@ public class DemoActivity extends Activity {
 					register(address, regid);
 
 				}
-
+				
+				//registers user for simulation if intent equals "registerParticipant"
 				Intent intent = getIntent();
 				String action = intent.getAction();
 				if (action != null && action.equals("registerParticipant")) {
 					registerForSimulation(intent.getStringExtra("name"));
-
 				}
-
+				
+				//populates the active simulations window
 				getActiveSimulations();
 
 				Log.d(TAG, regid);
@@ -247,25 +257,30 @@ public class DemoActivity extends Activity {
 			}
 		}
 	}
-
+	
+	/**
+	 * Toggle the stored preference
+	 * @param idRadioButton
+	 */
 	private void setAssociationStatus(int idRadioButton) {
 		RadioButton rt = null;
 
 		switch (idRadioButton) {
-		case 0:
+		case MANUAL:
 			rt = (RadioButton) findViewById(R.id.manual);
 			break;
-		/*
-		 * case 1: rt = (RadioButton) findViewById(R.id.auto); break;
-		 */
-		case 2:
+
+		case POP_UP:
 			rt = (RadioButton) findViewById(R.id.pop);
 			break;
 
 		}
 		rt.toggle();
 	}
-
+	
+	/**
+	 * Update association method (manual/pop_up) in the server
+	 */
 	protected void savePreferences() {
 		new AsyncTask<Void, Void, String>() {
 			@Override
@@ -306,7 +321,11 @@ public class DemoActivity extends Activity {
 			}
 		}.execute(null, null, null);
 	}
-
+	
+	/**
+	 * Check if there is wifi connection
+	 * @return
+	 */
 	private boolean netCheckin() {
 		try {
 			ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -323,6 +342,9 @@ public class DemoActivity extends Activity {
 		}
 	}
 
+	/**
+	 * Check if there the user is associated with a simulation
+	 */
 	private void checkAssociation() {
 		new AsyncTask<Void, Void, String>() {
 			@Override
@@ -404,6 +426,9 @@ public class DemoActivity extends Activity {
 
 	}
 
+	/**
+	 * Populate the list of active simulations
+	 */
 	private void getActiveSimulations() {
 		new AsyncTask<Void, Void, String>() {
 			@Override
@@ -496,7 +521,12 @@ public class DemoActivity extends Activity {
 
 		}.execute(null, null, null);
 	}
-
+	
+	/**
+	 * Starts/Stops the service 
+	 * Handles the onclick of the Start/Stop Button
+	 * @param view
+	 */
 	public void activateService(final View view) {
 		if (LOSTService.serviceActive) {
 			stop();
@@ -508,6 +538,9 @@ public class DemoActivity extends Activity {
 		}
 	}
 
+	/**
+	 * Initiates the stopping mechanism
+	 */
 	private void stop() {
 		serviceActivate.setText("Stopping service");
 		test.setText("Waiting for internet connection to sync files");
@@ -522,15 +555,16 @@ public class DemoActivity extends Activity {
 
 	}
 
-	// Select Simulation
+	/**
+	 * Handles the on click of the Associate/dissociate Button  
+	 * @param view
+	 */
 	public void associate(final View view) {
 		if (state_associated) {
 			disassociate();
 			return;
 		}
-
 		state_associated = true;
-
 		AlertDialog.Builder alertDialog = new AlertDialog.Builder(
 				DemoActivity.this);
 		LayoutInflater inflater = getLayoutInflater();
@@ -540,13 +574,11 @@ public class DemoActivity extends Activity {
 
 		final ListView lv = (ListView) convertView.findViewById(R.id.listView1);
 		lv.setBackgroundColor(Color.WHITE);
-
 		String[] simu = new String[activeSimulations.length];
 		for (int i = 0; i < simu.length; i++) {
 			simu[i] = activeSimulations[i].getName() + ", "
 					+ activeSimulations[i].getLocation();
 		}
-
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
 				android.R.layout.simple_list_item_1, simu);
 		lv.setAdapter(adapter);
@@ -583,6 +615,9 @@ public class DemoActivity extends Activity {
 		al.setCanceledOnTouchOutside(true);
 	}
 
+	/**
+	 * Dissassociate from the current simulation/alert
+	 */
 	public void disassociate() {
 		new AsyncTask<Void, Void, String>() {
 			@Override
@@ -625,6 +660,10 @@ public class DemoActivity extends Activity {
 		}.execute(null, null, null);
 	}
 
+	/**
+	 * Registers the simulation name in the content provider
+	 * @param value
+	 */
 	private void regSimulationContentProvider(String value) {
 		ContentValues cv = new ContentValues();
 		cv.put(MessagesProvider.COL_SIMUKEY, "simulation");
@@ -634,10 +673,11 @@ public class DemoActivity extends Activity {
 
 	}
 
-	private void registerForSimulation(final String name/*
-														 * , final String
-														 * password
-														 */) {
+	/**
+	 * Registers user in a simulation
+	 * @param name
+	 */
+	private void registerForSimulation(final String name) {
 
 		new AsyncTask<Void, Void, String>() {
 			@Override

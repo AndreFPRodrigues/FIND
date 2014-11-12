@@ -227,7 +227,9 @@ public class LOSTService extends Service {
 			// Runtime.getRuntime().exec("logcat -f" + " /sdcard/Logcat.txt");
 			Runtime.getRuntime().exec(
 					new String[] { "logcat", "-f", filePath + "_gcm.txt", "-v",
-							"time", "NodeID:V *:S" });
+							"time", "dalvikvm:S *:V" });
+			Runtime.getRuntime().exec(
+					new String[] { "logcat", "-c"});
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
