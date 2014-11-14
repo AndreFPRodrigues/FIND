@@ -80,9 +80,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	private final int CREATE_POP = 1;
 	private final int START = 2;
 	private final int STOP = 3;
-	private final int LAST_UPDATE_THRESHOLD = 1000 * 60 * 120;
 	private final int RADIUS_DOWNLOAD = 1;
-	private final int ACCURACY = 4000;
 	private Context c;
 
 	private long locationTimeout;
@@ -127,7 +125,8 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 			if (tp == STOP) {
 				Log.d(TAG, "Stopping service");
-				generateNotification(c, "terminating the service");
+				Notifications
+						.generateNotification(c, "terminating the service");
 
 				regSimulationContentProvider("");
 				LOSTService.stop(c);
@@ -139,7 +138,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		}
 
 		Log.d(TAG, "Checking received new notification");
-
 		// received new simulation notification, getting parameters
 		name = intent.getExtras().getString("name");
 		date = intent.getExtras().getString("date");
@@ -151,16 +149,16 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		Log.d(TAG, "date: " + date);
 
 		// set timer for retriving location
-		long timeleft = timeToDate(date);
+		long timeleft = DateFunctions.timeToDate(date);
 		locationTimer = timeleft / 2;
 		locationTimeout = locationTimer / number_attempts;
 
 		Log.d(TAG, "timeleft: " + timeleft);
 
 		// retriving last best location
-		Location l = getBestLocation();
+		Location l = LocationFunctions.getBestLocation(context);
 		int aux = 0;
-		if (l == null || oldLocation(l)) {
+		if (l == null || LocationFunctions.oldLocation(l)) {
 			Log.d(TAG, "old or null location");
 
 			// if old location then try to get new location for half the time
@@ -213,6 +211,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	/**
 	 * Prompt timed pop-up asking if the user wishes to associate himself with
 	 * if it timeouts it automatically associates the user
+	 * 
 	 * @param currentLoc
 	 */
 	private void startPopUp(double[] currentLoc) {
@@ -231,16 +230,19 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			editor.commit();
 
 			center = new LatLng(currentLoc[0], currentLoc[1]);
-			isInside = isInLocation(currentLoc, latS, lonS, latE, lonE);
+			isInside = LocationFunctions.isInLocation(currentLoc, latS, lonS,
+					latE, lonE);
 			if (!isInside) {
 				Log.d(TAG, "Stopping: not inside bounds");
 				return;
 			}
 
-			LatLng start = adjustCoordinates(center, RADIUS_DOWNLOAD, 135);
+			LatLng start = LocationFunctions.adjustCoordinates(center,
+					RADIUS_DOWNLOAD, 135);
 			intent.putExtra("latS", start.latitude);
 			intent.putExtra("lonS", start.longitude);
-			LatLng end = adjustCoordinates(center, RADIUS_DOWNLOAD, 315);
+			LatLng end = LocationFunctions.adjustCoordinates(center,
+					RADIUS_DOWNLOAD, 315);
 			intent.putExtra("latE", end.latitude);
 			intent.putExtra("lonE", end.longitude);
 
@@ -255,13 +257,15 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			editor.putFloat("lonE", (float) lonE);
 			editor.commit();
 
-			center = findCenter(latS, lonS, latE, lonE);
+			center = LocationFunctions.findCenter(latS, lonS, latE, lonE);
 			// get top left coordinate
-			LatLng start = adjustCoordinates(center, RADIUS_DOWNLOAD, 135);
+			LatLng start = LocationFunctions.adjustCoordinates(center,
+					RADIUS_DOWNLOAD, 135);
 			intent.putExtra("latS", start.latitude);
 			intent.putExtra("lonS", start.longitude);
 			// get bottom right coordinate
-			LatLng end = adjustCoordinates(center, RADIUS_DOWNLOAD, 315);
+			LatLng end = LocationFunctions.adjustCoordinates(center,
+					RADIUS_DOWNLOAD, 315);
 			intent.putExtra("latE", end.latitude);
 			intent.putExtra("lonE", end.longitude);
 		}
@@ -272,119 +276,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		c.startActivity(intent);
 
-	}
-
-	private LatLng findCenter(double f_latS, double f_lonS, double f_latE,
-			double f_lonE) {
-		double diffLat = Math.abs(f_latS - f_latE) / 2;
-		double diffLon = Math.abs(f_lonE - f_lonS) / 2;
-
-		// tp.downloadTilesInBound(f_latS, f_lonE, f_latE, f_lonS , MIN_ZOOM,
-		// MAX_ZOOM, c);
-
-		return new LatLng(f_latS + diffLat, f_lonE + diffLon);
-	}
-
-	// Get coordidates at a certain radius and degrees
-	private LatLng adjustCoordinates(LatLng center, int radius, int degrees) {
-		double lat = (center.latitude * Math.PI) / 180;
-
-		double lon = (center.longitude * Math.PI) / 180;
-
-		double d = (float) (((float) radius) / 6378.1);
-
-		double brng = degrees * Math.PI / 180;
-		// rad
-		double destLat = Math.asin(Math.sin(lat) * Math.cos(d) + Math.cos(lat)
-				* Math.sin(d) * Math.cos(brng));
-		double destLng = ((lon + Math.atan2(
-				Math.sin(brng) * Math.sin(d) * Math.cos(lat), Math.cos(d)
-						- Math.sin(lat) * Math.sin(destLat))) * 180)
-				/ Math.PI;
-		destLat = (destLat * 180) / Math.PI;
-
-		// Log.d(TAG, "lat:" + lat + "->" + destLat + " lon:" + lon + "->"
-		// + destLng);
-		return new LatLng(destLat, destLng);
-
-	}
-
-	// Primitive location checker
-	private boolean isInLocation(double[] loc, double f_latS, double f_lonS,
-			double f_latE, double f_lonE) {
-
-		Log.d(TAG, "values " + f_latS + " " + f_lonS + " " + f_latE + " "
-				+ f_lonE);
-		double lat = loc[0];
-		double lon = loc[1];
-		if (lat < f_latS && lat > f_latE && lon > f_lonE && lon < f_lonS) {
-			return true;
-		}
-		return false;
-	}
-
-	static long timeToDate(String dtStart) {
-		SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		try {
-			Date date = format.parse(dtStart);
-			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-			Date c_date = new Date();
-			dateFormat.format(c_date);
-			return getDateDiff(c_date, date, TimeUnit.MILLISECONDS);
-
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return 0;
-	}
-
-	/**
-	 * Get a diff between two dates
-	 * 
-	 * @param date1
-	 *            the oldest date
-	 * @param date2
-	 *            the newest date
-	 * @param timeUnit
-	 *            the unit in which you want the diff
-	 * @return the diff value, in the provided unit
-	 */
-	public static long getDateDiff(Date date1, Date date2, TimeUnit timeUnit) {
-		long diffInMillies = date2.getTime() - date1.getTime();
-		return timeUnit.convert(diffInMillies, TimeUnit.MILLISECONDS);
-	}
-
-	/**
-	 * Generate Notification
-	 * 
-	 * @param context
-	 * @param message
-	 */
-	private static void generateNotification(Context context, String message) {
-		int icon = R.drawable.service_logo;
-		long when = System.currentTimeMillis();
-		NotificationManager notificationManager = (NotificationManager) context
-				.getSystemService(Context.NOTIFICATION_SERVICE);
-		Notification notification = new Notification(icon, message, when);
-
-		String title = context.getString(R.string.app_name);
-
-		Intent notificationIntent = new Intent(context, DemoActivity.class);
-		// set intent so it does not start a new activity
-		notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
-				| Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		PendingIntent intent = PendingIntent.getActivity(context, 0,
-				notificationIntent, 0);
-		notification.setLatestEventInfo(context, title, message, intent);
-		notification.flags |= Notification.FLAG_AUTO_CANCEL;
-
-		// Play default notification sound
-		notification.defaults |= Notification.DEFAULT_SOUND;
-
-		// Vibrate if vibrate is enabled
-		notification.defaults |= Notification.DEFAULT_VIBRATE;
-		notificationManager.notify(0, notification);
 	}
 
 	protected void deletePoints(final String regid) {
@@ -431,78 +322,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		c.getContentResolver().insert(MessagesProvider.URI_SIMULATION, cv);
 	}
 
-	/**
-	 * try to get the 'best' location selected from all providers
-	 */
-	private Location getBestLocation() {
-		Location gpslocation = getLocationByProvider(LocationManager.GPS_PROVIDER);
-		Location networkLocation = getLocationByProvider(LocationManager.NETWORK_PROVIDER);
-		// if we have only one location available, the choice is easy
-		if (gpslocation == null) {
-			Log.d(TAG, "No GPS Location available.");
-			if (networkLocation != null
-					&& networkLocation.getAccuracy() < ACCURACY) {
-				Log.d(TAG, "Available accurate network location");
-				return networkLocation;
-
-			} else {
-				Log.d(TAG, "No Network Location available");
-				return null;
-			}
-		}
-		if (networkLocation == null) {
-			Log.d(TAG, "No Network Location available");
-			return gpslocation;
-		}
-		// a locationupdate is considered 'old' if its older than the configured
-		// update interval. this means, we didn't get a
-		// update from this provider since the last check
-		boolean gpsIsOld = oldLocation(gpslocation);
-		boolean networkIsOld = oldLocation(networkLocation);
-		// gps is current and available, gps is better than network
-		if (!gpsIsOld) {
-			Log.d(TAG, "Returning current GPS Location");
-			return gpslocation;
-		}
-		// gps is old, we can't trust it. use network location
-		if (!networkIsOld) {
-			Log.d(TAG, "GPS is old, Network is current, returning network");
-			return networkLocation;
-		}
-		// both are old return the newer of those two
-		if (gpslocation.getTime() > networkLocation.getTime()) {
-			Log.d(TAG, "Both are old, returning gps(newer)");
-			return gpslocation;
-		} else {
-			Log.d(TAG, "Both are old, returning network(newer)");
-			return networkLocation;
-		}
-	}
-
-	private boolean oldLocation(Location l) {
-		long old = System.currentTimeMillis() - LAST_UPDATE_THRESHOLD;
-		return (l.getTime() < old);
-	}
-
-	/**
-	 * get the last known location from a specific provider (network/gps)
-	 */
-	private Location getLocationByProvider(String provider) {
-		Location location = null;
-
-		LocationManager locationManager = (LocationManager) c
-				.getApplicationContext().getSystemService(
-						Context.LOCATION_SERVICE);
-		try {
-			if (locationManager.isProviderEnabled(provider)) {
-				location = locationManager.getLastKnownLocation(provider);
-			}
-		} catch (IllegalArgumentException e) {
-			Log.d(TAG, "Cannot acces Provider " + provider);
-		}
-		return location;
-	}
-
 	// On service start verify if the user is in a affected area
 	Handler verifyLoc = new Handler();
 
@@ -522,7 +341,8 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		public void run() {
 			double[] value = (double[]) ls.getCurrentValue();
 			if (value[0] != 0) {
-				if (!isInLocation(value, lat, lon, lat2, lon2)) {
+				if (!LocationFunctions
+						.isInLocation(value, lat, lon, lat2, lon2)) {
 					stop();
 					Log.d(TAG, "Not in location");
 				}
@@ -541,7 +361,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	 */
 	private void stop() {
 		Log.d(TAG, "Stopping service");
-		generateNotification(c, "The simulation has stopped");
+		Notifications.generateNotification(c, "The simulation has stopped");
 
 		Intent svcIntent = new Intent(
 				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
@@ -597,11 +417,9 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			handler.postDelayed(runnable, locationTimeout);
 			attempts++;
 		} else {
-
 			ls.stopSensor();
 			startPopUp(null);
 		}
-
 	}
 
 	/**

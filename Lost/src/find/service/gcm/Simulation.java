@@ -3,14 +3,20 @@ package find.service.gcm;
 import find.service.gcm.map.TilesProvider;
 
 import java.io.File;
+import java.util.GregorianCalendar;
 
+import find.service.net.diogomarques.wifioppish.MessagesProvider;
 import find.service.org.json.JSONObject;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
 
 public class Simulation {
 	String name;
@@ -94,6 +100,20 @@ public class Simulation {
 
 		tp.downloadTilesInBound(f_latS, f_lonE, f_latE, f_lonS, MIN_ZOOM,
 				MAX_ZOOM, c);
+	}
+	
+	
+	/**
+	 * Registers the simulation name in the content provider
+	 * @param value
+	 */
+	public  static void regSimulationContentProvider(String value, Context context) {
+		ContentValues cv = new ContentValues();
+		cv.put(MessagesProvider.COL_SIMUKEY, "simulation");
+		cv.put(MessagesProvider.COL_SIMUVALUE, value);
+		context.getContentResolver()
+				.insert(MessagesProvider.URI_SIMULATION, cv);
+
 	}
 
 }

@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
 
 public class PopUpActivity extends Activity {
 	private Context c;
@@ -40,12 +41,12 @@ public class PopUpActivity extends Activity {
 		final double lonE = intent.getExtras().getDouble("lonE");
 
 		// set timer for retriving location
-		long timeleft = GcmBroadcastReceiver.timeToDate(date);
+		long timeleft = DateFunctions.timeToDate(date);
 		long handlerTimer = timeleft - threshold;
 		if (handlerTimer < 0)
 			handlerTimer = 0;
+		
 		Log.d(TAG, "pop up timer:" + handlerTimer);
-
 		final AlertDialog alert = new AlertDialog.Builder(this)
 				.setIcon(R.drawable.service_logo)
 				.setTitle("Associate to simulation")
@@ -67,9 +68,9 @@ public class PopUpActivity extends Activity {
 								startActivity(intent);
 								Simulation.preDownloadTiles(latS, lonS, latE,
 										lonE, c);
-								setAlarm(date);
+								ScheduleService.setAlarm(date, c);
 
-								generateNotification(c,
+								Notifications.generateNotification(c,
 										"You have been associate to " + name
 												+ ". Details in FIND Service.");
 								finish();
@@ -92,15 +93,13 @@ public class PopUpActivity extends Activity {
 					intent.putExtra("name", name);
 					startActivity(intent);
 					Simulation.preDownloadTiles(latS, lonS, latE, lonE, c);
-					generateNotification(c, "You have been associate to "
+					Notifications.generateNotification(c, "You have been associate to "
 							+ name + ". Details in FIND Service.");
-					setAlarm(date);
+					ScheduleService.setAlarm(date, c);
 
 					alert.dismiss();
 					finish();
-
-				}
-				
+				}	
 			}
 		};
 
@@ -116,46 +115,6 @@ public class PopUpActivity extends Activity {
 		handler.postDelayed(runnable, handlerTimer);
 	}
 
-	private void setAlarm(String date) {
-
-		long timeleft = GcmBroadcastReceiver.timeToDate(date);
-		if (timeleft > 0) {
-			Long time = new GregorianCalendar().getTimeInMillis() + timeleft;
-			Log.d(TAG, "setting alarm " + timeleft);
-			Intent intentAlarm = new Intent("startAlarm");
-			PendingIntent startPIntent = PendingIntent.getBroadcast(c, 0,
-					intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
-			
-			// create the object
-			AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-
-			// set the alarm for particular time
-			alarmManager.set(AlarmManager.RTC_WAKEUP, time, startPIntent);
-			// Toast.makeText(this, "Alarm Scheduled for " + timeleft,
-			// Toast.LENGTH_LONG).show();
-
-		}
-
-	}
-
-	public static void cancelAlarm(Context c) {
-		Log.d(TAG, "canceling alarm");
-
-		Intent intentAlarm = new Intent("startAlarm");
-		PendingIntent startPIntent = PendingIntent.getBroadcast(c, 0,
-				intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
-
-		// create the object
-		AlarmManager alarmManager = (AlarmManager) c
-				.getSystemService(Context.ALARM_SERVICE);
-
-		// set the alarm for particular time
-		alarmManager.cancel(startPIntent);
-		// Toast.makeText(this, "Alarm Scheduled for " + timeleft,
-		// Toast.LENGTH_LONG).show();
-
-	}
-
 	private void regSimulationContentProvider(String value) {
 		ContentValues cv = new ContentValues();
 		cv.put(MessagesProvider.COL_SIMUKEY, "simulation");
@@ -163,29 +122,5 @@ public class PopUpActivity extends Activity {
 		c.getContentResolver().insert(MessagesProvider.URI_SIMULATION, cv);
 	}
 
-	private static void generateNotification(Context context, String message) {
-		int icon = R.drawable.service_logo;
-		long when = System.currentTimeMillis();
-		NotificationManager notificationManager = (NotificationManager) context
-				.getSystemService(Context.NOTIFICATION_SERVICE);
-		Notification notification = new Notification(icon, message, when);
 
-		String title = context.getString(R.string.app_name);
-
-		Intent notificationIntent = new Intent(context, DemoActivity.class);
-		// set intent so it does not start a new activity
-		notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
-				| Intent.FLAG_ACTIVITY_SINGLE_TOP);
-		PendingIntent intent = PendingIntent.getActivity(context, 0,
-				notificationIntent, 0);
-		notification.setLatestEventInfo(context, title, message, intent);
-		notification.flags |= Notification.FLAG_AUTO_CANCEL;
-
-		// Play default notification sound
-		notification.defaults |= Notification.DEFAULT_SOUND;
-
-		// Vibrate if vibrate is enabled
-		notification.defaults |= Notification.DEFAULT_VIBRATE;
-		notificationManager.notify(0, notification);
-	}
 }

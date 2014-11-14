@@ -75,7 +75,7 @@ public class LOSTService extends Service {
 		if (environment != null) {
 			Log.i(TAG, "Stopped looped");
 
-			//environment.stopStateLoop();
+			// environment.stopStateLoop();
 			environment = null;
 			serviceActive = false;
 		}
@@ -87,7 +87,7 @@ public class LOSTService extends Service {
 	public static void stop(Context context) {
 		LOSTService.toStop = true;
 		saveLogCat();
-		
+
 		if (environment != null) {
 			environment.stopStateLoop();
 			// environment=null;
@@ -105,23 +105,22 @@ public class LOSTService extends Service {
 	}
 
 	public static void terminate(Context context) {
-		LOSTService.toStop=false;
-		LOSTService.serviceActive =false;
-		LOSTService.synced=false;
-		
+		LOSTService.toStop = false;
+		LOSTService.serviceActive = false;
+		LOSTService.synced = false;
+
 		Intent svcIntent = new Intent(
 				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
 
 		context.deleteDatabase("LOSTMessages");
-		
+
 		ContentValues cv = new ContentValues();
 		cv.put(MessagesProvider.COL_STATUSKEY, "service");
 		cv.put(MessagesProvider.COL_STATUSVALUE, "Disabled");
 		context.getContentResolver().insert(MessagesProvider.URI_STATUS, cv);
-		
+
 		context.stopService(svcIntent);
 		System.exit(0);
-
 
 	}
 
@@ -134,23 +133,8 @@ public class LOSTService extends Service {
 			@Override
 			protected Void doInBackground(Void... params) {
 
-				// listener for state updates
-				ContentResolver cr = getContentResolver();
-				String URL = "content://find.service.net.diogomarques.wifioppish.MessagesProvider/status";
-				Uri uri = Uri.parse(URL);
-				Cursor c = getContentResolver().query(uri, null, "", null, "");
-				String serviceState = "";
-				if (c.moveToFirst()) {
-					do {
-						if (c.getString(c.getColumnIndex("statuskey")).equals(
-								"service")) {
-							serviceState = c.getString(c
-									.getColumnIndex("statusvalue"));
-						}
-					} while (c.moveToNext());
-				}
-				if (serviceState.equals("Stopping")) {
-					LOSTService.toStop = true;
+
+				if (LOSTService.toStop) {
 					environment.startStateLoop(State.Stopped);
 
 				} else {
@@ -179,8 +163,32 @@ public class LOSTService extends Service {
 			PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
 			environment = AndroidEnvironment.createInstance(this);
+			
+
+			// listener for state 
+			ContentResolver cr = getContentResolver();
+			String URL = "content://find.service.net.diogomarques.wifioppish.MessagesProvider/status";
+			Uri uri = Uri.parse(URL);
+			Cursor c = getContentResolver().query(uri, null, "", null, "");
+			String serviceState = "";
+			if (c.moveToFirst()) {
+				do {
+					if (c.getString(c.getColumnIndex("statuskey")).equals(
+							"service")) {
+						serviceState = c.getString(c
+								.getColumnIndex("statusvalue"));
+					}
+				} while (c.moveToNext());
+			}
+			if (serviceState.equals("Stopping")) {
+				LOSTService.toStop = true;
+				startForeground(NOTIFICATION_STICKY, getNotification("FIND Service is syncing"));
+			}else{
+				startForeground(NOTIFICATION_STICKY, getNotification("The FIND Service is now running"));
+
+			}
+			
 			processStart();
-			startForeground(NOTIFICATION_STICKY, getNotification());
 		}
 
 		return Service.START_STICKY;
@@ -190,19 +198,19 @@ public class LOSTService extends Service {
 	 * Creates a notification telling that the LOST Service is running. This
 	 * notification is important to ensure the service keeps running and doesn't
 	 * killed by Android system when the system is low on resources.
+	 * @param contentText 
 	 * 
 	 * @return {@link Notification} instance, with default values to tell
 	 *         service is running
 	 */
 	@SuppressWarnings("deprecation")
-	private Notification getNotification() {
+	private Notification getNotification(String contentText) {
 		Log.i(TAG, "Get notification");
 
 		if (notificationManager == null)
 			notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
 		CharSequence contentTitle = "FIND Service";
-		CharSequence contentText = "The FIND Service is now running";
 
 		// Although deprecated, this code ensures compatibility with older
 		// Android versions
@@ -222,13 +230,11 @@ public class LOSTService extends Service {
 		String filePath = Environment.getExternalStorageDirectory() + "/logcat";
 
 		try {
-			
 
 			Runtime.getRuntime().exec(
-					new String[] { "logcat", "-f", filePath + "_FIND.txt", "-v",
-							"time", "dalvikvm:S *:V" });
-			Runtime.getRuntime().exec(
-					new String[] { "logcat", "-c"});
+					new String[] { "logcat", "-f", filePath + "_FIND.txt",
+							"-v", "time", "dalvikvm:S *:V" });
+			Runtime.getRuntime().exec(new String[] { "logcat", "-c" });
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

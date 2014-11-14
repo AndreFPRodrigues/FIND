@@ -110,6 +110,7 @@ public class DemoActivity extends Activity {
 
 	private String regid;
 	private Simulation[] activeSimulations;
+	private int indexSimu;
 	private String address;
 	private String registeredSimulation;
 	private String location;
@@ -144,6 +145,7 @@ public class DemoActivity extends Activity {
 		state_associated = false;
 		test = (TextView) findViewById(R.id.with);
 		serviceActivate = (Button) findViewById(R.id.sservice);
+		indexSimu=-1;
 
 		//Check if the service is stopping and blocks interface
 		if (LOSTService.toStop) {
@@ -163,7 +165,7 @@ public class DemoActivity extends Activity {
 		}
 
 		//checks if there is internet connection
-		if (!netCheckin()) {
+		if (!RequestServer.netCheckin(context)) {
 			
 			//Blocks all the association and service preferences, only allows the user to start/stop the service
 			test.setText("FIND Service requires internet connection to alter preferences "
@@ -222,7 +224,7 @@ public class DemoActivity extends Activity {
 									.edit();
 							editor.putInt("associationState", associationState);
 							editor.commit();
-							savePreferences();
+							RequestServer.savePreferences(associationState, allowStorage, regid);
 
 						}
 					});
@@ -237,7 +239,7 @@ public class DemoActivity extends Activity {
 				if (regid.isEmpty()) {
 					registerInBackground();
 				} else {
-					register(address, regid);
+					RequestServer.register(address, regid);
 
 				}
 				
@@ -245,7 +247,7 @@ public class DemoActivity extends Activity {
 				Intent intent = getIntent();
 				String action = intent.getAction();
 				if (action != null && action.equals("registerParticipant")) {
-					registerForSimulation(intent.getStringExtra("name"));
+					RequestServer.registerForSimulation(intent.getStringExtra("name"),  regid, address);
 					Log.d("debugg", "Register for simulation 0");
 				}
 				
@@ -270,78 +272,12 @@ public class DemoActivity extends Activity {
 		switch (idRadioButton) {
 		case MANUAL:
 			rt = (RadioButton) findViewById(R.id.manual);
-			break;
-			
+			break;		
 		case POP_UP: case AUTO:
 			rt = (RadioButton) findViewById(R.id.pop);
 			break;
-
 		} 
 		rt.toggle();
-	}
-	
-	/**
-	 * Update association method (manual/pop_up) in the server
-	 */
-	protected void savePreferences() {
-		new AsyncTask<Void, Void, String>() {
-			@Override
-			protected String doInBackground(Void... params) {
-				StringBuilder builder = new StringBuilder();
-				HttpClient client = new DefaultHttpClient();
-				HttpGet httpGet;
-
-				httpGet = new HttpGet(
-						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations/savePreferences/"
-								+ associationState
-								+ ","
-								+ allowStorage
-								+ ","
-								+ regid);
-
-				try {
-					HttpResponse response = client.execute(httpGet);
-					StatusLine statusLine = response.getStatusLine();
-					int statusCode = statusLine.getStatusCode();
-					if (statusCode == 200) {
-						HttpEntity entity = response.getEntity();
-						InputStream content = entity.getContent();
-						BufferedReader reader = new BufferedReader(
-								new InputStreamReader(content));
-						String line;
-						while ((line = reader.readLine()) != null) {
-							builder.append(line);
-						}
-					}
-				} catch (ClientProtocolException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-				return null;
-			}
-		}.execute(null, null, null);
-	}
-	
-	/**
-	 * Check if there is wifi connection
-	 * @return
-	 */
-	private boolean netCheckin() {
-		try {
-			ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-			NetworkInfo mWifi = connManager
-					.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-
-			if (mWifi != null && mWifi.isConnectedOrConnecting()) {
-				return true;
-			} else {
-				return false;
-			}
-		} catch (Exception e) {
-			return false;
-		}
 	}
 
 	/**
@@ -403,7 +339,7 @@ public class DemoActivity extends Activity {
 					duration = jsonObject.getString("duration_m");
 
 					// simulation value in the content provider
-					regSimulationContentProvider(registeredSimulation);
+					Simulation.regSimulationContentProvider(registeredSimulation, context);
 
 					if (registeredSimulation != null
 							&& registeredSimulation.length() > 0) {
@@ -471,8 +407,6 @@ public class DemoActivity extends Activity {
 				for (int i = 0; i < jsonArray.length(); i++) {
 					JSONObject jsonObject = jsonArray.getJSONObject(i);
 					activeSimulations[i] = new Simulation(jsonObject);
-					Log.d("debugg", "Get active simulation " + i);
-
 				}
 
 				checkAssociation();
@@ -503,7 +437,7 @@ public class DemoActivity extends Activity {
 
 					msg = "Device registered, registration ID=" + regid;
 
-					register(address, regid);
+					RequestServer.register(address, regid);
 
 					// For this demo: we don't need to send it because the
 					// device will send
@@ -553,7 +487,7 @@ public class DemoActivity extends Activity {
 		((RadioButton) findViewById(R.id.manual)).setEnabled(false);
 		((RadioButton) findViewById(R.id.pop)).setEnabled(false);
 		serviceActivate.setEnabled(false);
-		regSimulationContentProvider(""); 
+		Simulation.regSimulationContentProvider("",context); 
 		LOSTService.stop(context);
 
 	}
@@ -579,15 +513,11 @@ public class DemoActivity extends Activity {
 		lv.setBackgroundColor(Color.WHITE);
 		String[] simu = new String[activeSimulations.length];
 		
-		Log.d("debugg", "Size: " + activeSimulations.length );
 
 		for (int i = 0; i < simu.length; i++) {
-			Log.d("debugg", "Name" + activeSimulations[i].getName() );
-
 			simu[i] = activeSimulations[i].getName() + ", "
 					+ activeSimulations[i].getLocation();
 		}
-		Log.d(TAG," aye" );
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
 				android.R.layout.simple_list_item_1, simu);
 		lv.setAdapter(adapter);
@@ -603,14 +533,16 @@ public class DemoActivity extends Activity {
 				AlertDialog.Builder alert = new AlertDialog.Builder(
 						DemoActivity.this);
 
-				registerForSimulation(activeSimulations[position].getName());
+				RequestServer.registerForSimulation(activeSimulations[position].getName(), regid, address);
 
 				registeredSimulation = activeSimulations[p].getName();
-				regSimulationContentProvider(registeredSimulation);
+				Simulation.regSimulationContentProvider(registeredSimulation, context);
+				final String  start_date = activeSimulations[position].date;
 
 				ui.post(new Runnable() {
 					public void run() {
 						Log.d("debugg", "associate to" + registeredSimulation );
+						ScheduleService.setAlarm(start_date, context);
 						test.setText(activeSimulations[p].toString());
 						associate.setText("Disassociate from Simulation");
 
@@ -644,14 +576,14 @@ public class DemoActivity extends Activity {
 					int statusCode = statusLine.getStatusCode();
 					if (statusCode == 200) {
 						registeredSimulation = "";
-						regSimulationContentProvider(registeredSimulation);
+						Simulation.regSimulationContentProvider(registeredSimulation, context);
 
 						ui.post(new Runnable() {
 							public void run() {
 								// Log.d("gcm", registeredSimulation);
 								test.setText("No simulation associated");
 								associate.setText("Associate to Simulation");
-								PopUpActivity.cancelAlarm(context);
+								ScheduleService.cancelAlarm(context);
 							}
 						});
 					} else {
@@ -669,166 +601,6 @@ public class DemoActivity extends Activity {
 		}.execute(null, null, null);
 	}
 
-	/**
-	 * Registers the simulation name in the content provider
-	 * @param value
-	 */
-	private void regSimulationContentProvider(String value) {
-		ContentValues cv = new ContentValues();
-		cv.put(MessagesProvider.COL_SIMUKEY, "simulation");
-		cv.put(MessagesProvider.COL_SIMUVALUE, value);
-		context.getContentResolver()
-				.insert(MessagesProvider.URI_SIMULATION, cv);
-
-	}
-
-	/**
-	 * Registers user in a simulation
-	 * @param name
-	 */
-	private void registerForSimulation(final String name) {
-
-		new AsyncTask<Void, Void, String>() {
-			@Override
-			protected String doInBackground(Void... params) {
-				StringBuilder builder = new StringBuilder();
-				HttpClient client = new DefaultHttpClient();
-				HttpPost httpPost;
-
-				httpPost = new HttpPost(
-						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations");
-
-				try {
-					List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(
-							3);
-					nameValuePairs.add(new BasicNameValuePair("name", name));
-					nameValuePairs.add(new BasicNameValuePair("regid", regid));
-					nameValuePairs.add(new BasicNameValuePair("mac_address",
-							address));
-
-					httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-					// Execute HTTP Post Request
-					HttpResponse response = client.execute(httpPost);
-					StatusLine statusLine = response.getStatusLine();
-					int statusCode = statusLine.getStatusCode();
-					if (statusCode == 200) {
-						HttpEntity entity = response.getEntity();
-						InputStream content = entity.getContent();
-						BufferedReader reader = new BufferedReader(
-								new InputStreamReader(content));
-						String line;
-						while ((line = reader.readLine()) != null) {
-							builder.append(line);
-						}
-						// Log.d("gcm", "response " + builder.toString());
-					} else {
-						// Log.e(ParseJSON.class.toString(),
-						// "Failed to download file");
-					}
-				} catch (ClientProtocolException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-				return builder.toString();
-			}
-		}.execute(null, null, null);
-
-	}
-
-	// Register this account with the server.
-	void register(final String mac, final String regId) {
-
-		new AsyncTask<Void, Void, String>() {
-			@Override
-			protected String doInBackground(Void... params1) {
-				String serverUrl = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/gcm/register.php";
-
-				Map<String, String> params = new HashMap<String, String>();
-				params.put("regId", regId);
-				params.put("mac", mac);
-
-				// Post registration values to web server
-				try {
-					post(serverUrl, params);
-
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				return serverUrl;
-			}
-		}.execute(null, null, null);
-
-	}
-
-	// Register the gcm user
-	private static String post(String endpoint, Map<String, String> params)
-			throws IOException {
-
-		StringBuilder sb = new StringBuilder();
-
-		URL url;
-		try {
-
-			url = new URL(endpoint);
-
-		} catch (MalformedURLException e) {
-			throw new IllegalArgumentException("invalid url: " + endpoint);
-		}
-
-		StringBuilder bodyBuilder = new StringBuilder();
-		Iterator<Entry<String, String>> iterator = params.entrySet().iterator();
-
-		// constructs the POST body using the parameters
-		while (iterator.hasNext()) {
-			Entry<String, String> param = iterator.next();
-			bodyBuilder.append(param.getKey()).append('=')
-					.append(param.getValue());
-			if (iterator.hasNext()) {
-				bodyBuilder.append('&');
-			}
-		}
-
-		String body = bodyBuilder.toString();
-
-		byte[] bytes = body.getBytes();
-
-		HttpURLConnection conn = null;
-		try {
-			conn = (HttpURLConnection) url.openConnection();
-			conn.setDoOutput(true);
-			conn.setUseCaches(false);
-			conn.setFixedLengthStreamingMode(bytes.length);
-			conn.setRequestMethod("POST");
-			conn.setRequestProperty("Content-Type",
-					"application/x-www-form-urlencoded;charset=UTF-8");
-			// post the request
-			OutputStream out = conn.getOutputStream();
-			out.write(bytes);
-			out.flush();
-			// Get the server response
-			BufferedReader reader = new BufferedReader(new InputStreamReader(
-					conn.getInputStream()));
-			String line = null;
-			// Read Server Response
-			while ((line = reader.readLine()) != null) {
-				// Append server response in string
-				sb.append(line + "\n");
-			}
-			reader.close();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			if (conn != null) {
-				conn.disconnect();
-				return sb.toString();
-			}
-		}
-		return null;
-	}
 
 	@Override
 	protected void onResume() {
