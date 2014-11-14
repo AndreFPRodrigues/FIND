@@ -211,7 +211,7 @@ public class LOSTService extends Service {
 			notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
 		CharSequence contentTitle = "FIND Service";
-
+		notificationManager.cancelAll();
 		// Although deprecated, this code ensures compatibility with older
 		// Android versions
 		Notification note = new Notification(R.drawable.service_logo,
