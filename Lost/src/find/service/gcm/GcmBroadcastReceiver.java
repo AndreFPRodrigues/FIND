@@ -19,12 +19,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -32,38 +26,22 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-
 import com.google.android.gms.maps.model.LatLng;
-
-import find.service.R;
 import find.service.net.diogomarques.wifioppish.MessagesProvider;
 import find.service.net.diogomarques.wifioppish.sensors.LocationSensor;
 import find.service.net.diogomarques.wifioppish.service.LOSTService;
-import android.R.integer;
 import android.app.Activity;
 import android.app.AlarmManager;
-import android.app.AlertDialog;
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Point;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.AsyncTask;
-import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
-import android.widget.Toast;
 
 /**
  * This {@code WakefulBroadcastReceiver} takes care of creating and managing a
@@ -76,9 +54,6 @@ import android.widget.Toast;
 
 public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	private final String TAG = "GCM_Receiver";
-	private final int CREATE_AUTO = 0;
-	private final int CREATE_POP = 1;
-	private final int START = 2;
 	private final int STOP = 3;
 	private final int RADIUS_DOWNLOAD = 1;
 	private Context c;
@@ -157,7 +132,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 		// retriving last best location
 		Location l = LocationFunctions.getBestLocation(context);
-		int aux = 0;
 		if (l == null || LocationFunctions.oldLocation(l)) {
 			Log.d(TAG, "old or null location");
 

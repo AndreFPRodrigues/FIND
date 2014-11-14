@@ -1,15 +1,8 @@
 package find.service.gcm;
-
-import java.util.GregorianCalendar;
-
 import find.service.R;
 import find.service.net.diogomarques.wifioppish.MessagesProvider;
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.AlertDialog;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -17,7 +10,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.Toast;
 
 public class PopUpActivity extends Activity {
 	private Context c;

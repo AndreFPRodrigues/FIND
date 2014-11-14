@@ -18,11 +18,11 @@ import android.widget.TextView;
 public class DownloadFile {
 	private final static String LT = "RESCUE";
 
-	int downloadedSize = 0;
-	int totalSize = 0;
-	String dwnload_file_path = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/world.sqlitedb";
+	private static int downloadedSize = 0;
+	private static int totalSize = 0;
+	private static String dwnload_file_path = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/world.sqlitedb";
 
-	public DownloadFile() {
+	public static void downloadTileDB() {
 		new Thread(new Runnable() {
 			public void run() {
 				downloadFile();
@@ -30,7 +30,7 @@ public class DownloadFile {
 		}).start();
 	}
 
-	void downloadFile() {
+	static void downloadFile() {
 
 		try {
 			URL url = new URL(dwnload_file_path);
