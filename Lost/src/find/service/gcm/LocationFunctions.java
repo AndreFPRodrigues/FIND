@@ -1,8 +1,11 @@
 package find.service.gcm;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.BatteryManager;
 import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -133,6 +136,20 @@ public class LocationFunctions {
 			Log.d(TAG, "Both are old, returning network(newer)");
 			return networkLocation;
 		}
+	}
+	
+	
+	public static float getBatteryLevel(Context c) {
+	    Intent batteryIntent = c.getApplicationContext().registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+	    int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+	    int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+	    // Error checking that probably isn't needed but I added just in case.
+	    if(level == -1 || scale == -1) {
+	        return 50.0f;
+	    }
+
+	    return ((float)level / (float)scale) * 100.0f; 
 	}
 
 }
