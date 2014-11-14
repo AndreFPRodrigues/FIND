@@ -1,6 +1,5 @@
 *.dex
 *.class
 *.class
-FIND_Rescuer/gen/oppus/rescue/Manifest.java
 *gen
 *bin

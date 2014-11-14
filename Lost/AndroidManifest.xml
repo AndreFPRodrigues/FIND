@@ -42,7 +42,7 @@
         <!-- the android value should be @integer/google_play_services_version -->
         <meta-data
             android:name="com.google.android.gms.version"
-            android:value="4323000" /> 
+            android:value="@integer/google_play_services_version" /> 
 
         <activity
             android:name="find.service.gcm.DemoActivity"
@@ -50,13 +50,20 @@
             android:icon="@drawable/service_logo"
             android:label="Find Service"
             android:launchMode="singleTop" >
-            <intent-filter>
+           
+        </activity>
+        <activity
+            android:name="find.service.gcm.SplashScreen"
+            android:label="@string/app_name" >
+            
+             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
         <activity
             android:name="find.service.gcm.PopUpActivity"
             android:label="@string/app_name"
@@ -68,7 +75,8 @@
           services and hand them to the custom IntentService.
 
           The com.google.android.c2dm.permission.SEND permission is necessary
-          so only GCM services can send data messages for the app.
+          so only GCM services can send data messages for the app.
+
         -->
         <receiver
             android:name="find.service.gcm.GcmBroadcastReceiver"

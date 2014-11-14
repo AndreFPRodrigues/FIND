@@ -16,7 +16,7 @@
 package find.service.gcm;
 
 import java.io.BufferedReader;
-import java.io.IOException;
+import java.io.IOException; 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import org.apache.http.HttpEntity;
@@ -60,9 +60,9 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	private final int STOP = 3;
 	private final int RADIUS_DOWNLOAD = 1;
 	private Context c;
-
+ 
 	private long locationTimeout;
-	private long locationTimer;
+	private long locationTimer; 
 	private int number_attempts = 5;
 	private int attempts = 1;
 	private Location currentLoc = null;
