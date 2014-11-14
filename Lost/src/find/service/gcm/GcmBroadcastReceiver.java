@@ -62,8 +62,8 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	private Context c;
  
 	private long locationTimeout;
-	private long locationTimer; 
-	private int number_attempts = 5;
+	private long locationTimer;  
+	private int number_attempts = 5; 
 	private int attempts = 1;
 	private Location currentLoc = null;
 
