@@ -28,6 +28,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import com.google.android.gms.maps.model.LatLng;
 import find.service.net.diogomarques.wifioppish.MessagesProvider;
+import find.service.net.diogomarques.wifioppish.NodeIdentification;
 import find.service.net.diogomarques.wifioppish.sensors.LocationSensor;
 import find.service.net.diogomarques.wifioppish.service.LOSTService;
 import android.app.Activity;
@@ -36,9 +37,11 @@ import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.AsyncTask;
+import android.os.BatteryManager;
 import android.os.Handler;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
@@ -210,7 +213,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 				Log.d(TAG, "Stopping: not inside bounds");
 				return;
 			}
-
+			RequestServer.sendCoordinates(NodeIdentification.getMyNodeId(c), center, LocationFunctions.getBatteryLevel(c));
 			LatLng start = LocationFunctions.adjustCoordinates(center,
 					RADIUS_DOWNLOAD, 135);
 			intent.putExtra("latS", start.latitude);
@@ -414,5 +417,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		verifyLoc.postDelayed(new MyRunnable(lat, lon, lat2, lon2), 30000);
 
 	}
+
 
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -26,6 +27,12 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.google.android.gms.maps.model.LatLng;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -33,6 +40,8 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 
 public class RequestServer {
+
+	private static String postCoordinates = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims";
 
 	/**
 	 * Check if there is wifi connection
@@ -198,7 +207,8 @@ public class RequestServer {
 	 * 
 	 * @param name
 	 */
-	public static void registerForSimulation(final String name, final String regid, final String address) {
+	public static void registerForSimulation(final String name,
+			final String regid, final String address) {
 
 		new AsyncTask<Void, Void, String>() {
 			@Override
@@ -245,6 +255,55 @@ public class RequestServer {
 				}
 
 				return builder.toString();
+			}
+		}.execute(null, null, null);
+
+	}
+
+	public static void sendCoordinates(final String macAddress,
+			final LatLng local, final float batery) {
+
+		new AsyncTask<Void, Void, String>() {
+			@Override
+			protected String doInBackground(Void... params) {
+				JSONArray jsonArray = new JSONArray();
+
+				JSONObject json = new JSONObject();
+				try {
+					json.put("nodeid", macAddress);
+					json.put("timestamp", System.currentTimeMillis());
+					json.put("msg", "");
+					json.put("latitude", local.latitude);
+					json.put("longitude", local.longitude);
+					json.put("llconf", 10);
+					json.put("battery", batery);
+					json.put("steps", 0);
+					json.put("screen", 0);
+					json.put("distance", -1);
+					json.put("safe", 0);
+					jsonArray.put(json);
+					String contents = jsonArray.toString();
+					HttpClient httpclient = new DefaultHttpClient();
+					HttpPost httppost = new HttpPost(postCoordinates);
+					List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(
+							2);
+					nameValuePairs
+							.add(new BasicNameValuePair("data", contents));
+					httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+					HttpResponse response = httpclient.execute(httppost);
+					HttpEntity entity = response.getEntity();
+				} catch (JSONException e) {
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (ClientProtocolException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return null;
 			}
 		}.execute(null, null, null);
 
