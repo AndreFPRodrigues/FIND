@@ -12,11 +12,13 @@ import find.service.org.json.JSONObject;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Color;
+import android.location.LocationManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -94,10 +96,10 @@ public class DemoActivity extends Activity {
 
 	int associationState;
 	int allowStorage;
-	
-	private final int MANUAL=0;
-	private final int AUTO=1;
-	private final int POP_UP=2;
+
+	private final int MANUAL = 0;
+	private final int AUTO = 1;
+	private final int POP_UP = 2;
 
 	final static String PATH = Environment.getExternalStorageDirectory()
 			+ "/mapapp/world.sqlitedb";;
@@ -112,9 +114,17 @@ public class DemoActivity extends Activity {
 		state_associated = false;
 		test = (TextView) findViewById(R.id.with);
 		serviceActivate = (Button) findViewById(R.id.sservice);
-		indexSimu=-1;
+		indexSimu = -1;
 
-		//Check if the service is stopping and blocks interface
+		if (!((LocationManager) context
+				.getSystemService(Context.LOCATION_SERVICE))
+				.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+			showGPSDisabledAlertToUser();
+		} else {
+			// gps is enabled
+		}
+
+		// Check if the service is stopping and blocks interface
 		if (LOSTService.toStop) {
 			test.setText("Waiting for internet connection to sync files");
 			associate.setEnabled(false);
@@ -125,16 +135,17 @@ public class DemoActivity extends Activity {
 			serviceActivate.setEnabled(false);
 			return;
 		}
-		
-		//Check service state and changes the button text
+
+		// Check service state and changes the button text
 		if (LOSTService.serviceActive) {
 			serviceActivate.setText("Stop Service");
 		}
 
-		//checks if there is internet connection
+		// checks if there is internet connection
 		if (!RequestServer.netCheckin(context)) {
-			
-			//Blocks all the association and service preferences, only allows the user to start/stop the service
+
+			// Blocks all the association and service preferences, only allows
+			// the user to start/stop the service
 			test.setText("FIND Service requires internet connection to alter preferences "
 					+ "please connect via WIFI and restart the application");
 			Toast.makeText(getApplicationContext(),
@@ -149,34 +160,33 @@ public class DemoActivity extends Activity {
 			((RadioButton) findViewById(R.id.pop)).setEnabled(false);
 
 		} else {
-			
-			//Checks if the BD responsible for the tiles exits, if not download the file from the server
+
+			// Checks if the BD responsible for the tiles exits, if not download
+			// the file from the server
 			// set the tile provider and database
 			File bd = new File(Environment.getExternalStorageDirectory()
 					.toString() + "/mapapp/world.sqlitedb");
-			
+
 			if (!bd.exists()) {
 				DownloadFile.downloadTileDB();
 			}
-
 
 			final SharedPreferences preferences = getApplicationContext()
 					.getSharedPreferences("Lost",
 							android.content.Context.MODE_PRIVATE);
 			int idRadioButton = preferences.getInt("associationState", 2);
 			ui = new Handler();
-			
-			
+
 			WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 			WifiInfo info = manager.getConnectionInfo();
-			
-			//gets mac_address (user identification)
+
+			// gets mac_address (user identification)
 			address = info.getMacAddress();
 			address = NodeIdentification.getNodeId(address);
 
 			setAssociationStatus(idRadioButton);
 
-			//Service preferences listener
+			// Service preferences listener
 			associationStatus
 					.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
 
@@ -188,33 +198,36 @@ public class DemoActivity extends Activity {
 							} else {
 								associationState = POP_UP;
 							}
-							
+
 							SharedPreferences.Editor editor = preferences
 									.edit();
 							editor.putInt("associationState", associationState);
 							editor.commit();
-							RequestServer.savePreferences(associationState, allowStorage, regid);
+							RequestServer.savePreferences(associationState,
+									allowStorage, regid);
 
 						}
 					});
 
-			//registers user for simulation if intent equals "registerParticipant"
+			// registers user for simulation if intent equals
+			// "registerParticipant"
 			Intent intent = getIntent();
 			String action = intent.getAction();
 			if (action != null && action.equals("registerParticipant")) {
-				RequestServer.registerForSimulation(intent.getStringExtra("name"),  regid, address);
+				RequestServer.registerForSimulation(
+						intent.getStringExtra("name"), regid, address);
 				Log.d("debugg", "Register for simulation 0");
 			}
-			
-			//populates the active simulations window
+
+			// populates the active simulations window
 			getActiveSimulations();
-			
-	
+
 		}
 	}
-	
+
 	/**
 	 * Toggle the stored preference
+	 * 
 	 * @param idRadioButton
 	 */
 	private void setAssociationStatus(int idRadioButton) {
@@ -223,11 +236,12 @@ public class DemoActivity extends Activity {
 		switch (idRadioButton) {
 		case MANUAL:
 			rt = (RadioButton) findViewById(R.id.manual);
-			break;		
-		case POP_UP: case AUTO:
+			break;
+		case POP_UP:
+		case AUTO:
 			rt = (RadioButton) findViewById(R.id.pop);
 			break;
-		} 
+		}
 		rt.toggle();
 	}
 
@@ -290,14 +304,16 @@ public class DemoActivity extends Activity {
 					duration = jsonObject.getString("duration_m");
 
 					// simulation value in the content provider
-					Simulation.regSimulationContentProvider(registeredSimulation, context);
+					Simulation.regSimulationContentProvider(
+							registeredSimulation, context);
 
 					if (registeredSimulation != null
 							&& registeredSimulation.length() > 0) {
 
 						ui.post(new Runnable() {
 							public void run() {
-								Log.d("gcm", "Associado a"+ registeredSimulation);
+								Log.d("gcm", "Associado a"
+										+ registeredSimulation);
 								test.setText(registeredSimulation + ", "
 										+ location + " at " + date + " for "
 										+ duration + "min");
@@ -368,10 +384,9 @@ public class DemoActivity extends Activity {
 
 	}
 
-	
 	/**
-	 * Starts/Stops the service 
-	 * Handles the onclick of the Start/Stop Button
+	 * Starts/Stops the service Handles the onclick of the Start/Stop Button
+	 * 
 	 * @param view
 	 */
 	public void activateService(final View view) {
@@ -397,13 +412,14 @@ public class DemoActivity extends Activity {
 		((RadioButton) findViewById(R.id.manual)).setEnabled(false);
 		((RadioButton) findViewById(R.id.pop)).setEnabled(false);
 		serviceActivate.setEnabled(false);
-		Simulation.regSimulationContentProvider("",context); 
+		Simulation.regSimulationContentProvider("", context);
 		LOSTService.stop(context);
 
 	}
 
 	/**
-	 * Handles the on click of the Associate/dissociate Button  
+	 * Handles the on click of the Associate/dissociate Button
+	 * 
 	 * @param view
 	 */
 	public void associate(final View view) {
@@ -422,7 +438,6 @@ public class DemoActivity extends Activity {
 		final ListView lv = (ListView) convertView.findViewById(R.id.listView1);
 		lv.setBackgroundColor(Color.WHITE);
 		String[] simu = new String[activeSimulations.length];
-		
 
 		for (int i = 0; i < simu.length; i++) {
 			simu[i] = activeSimulations[i].getName() + ", "
@@ -443,15 +458,17 @@ public class DemoActivity extends Activity {
 				AlertDialog.Builder alert = new AlertDialog.Builder(
 						DemoActivity.this);
 
-				RequestServer.registerForSimulation(activeSimulations[position].getName(), regid, address);
+				RequestServer.registerForSimulation(
+						activeSimulations[position].getName(), regid, address);
 
 				registeredSimulation = activeSimulations[p].getName();
-				Simulation.regSimulationContentProvider(registeredSimulation, context);
-				final String  start_date = activeSimulations[position].date;
+				Simulation.regSimulationContentProvider(registeredSimulation,
+						context);
+				final String start_date = activeSimulations[position].date;
 
 				ui.post(new Runnable() {
 					public void run() {
-						Log.d("debugg", "associate to" + registeredSimulation );
+						Log.d("debugg", "associate to" + registeredSimulation);
 						ScheduleService.setAlarm(start_date, context);
 						test.setText(activeSimulations[p].toString());
 						associate.setText("Disassociate from Simulation");
@@ -486,7 +503,8 @@ public class DemoActivity extends Activity {
 					int statusCode = statusLine.getStatusCode();
 					if (statusCode == 200) {
 						registeredSimulation = "";
-						Simulation.regSimulationContentProvider(registeredSimulation, context);
+						Simulation.regSimulationContentProvider(
+								registeredSimulation, context);
 
 						ui.post(new Runnable() {
 							public void run() {
@@ -510,7 +528,6 @@ public class DemoActivity extends Activity {
 			}
 		}.execute(null, null, null);
 	}
-
 
 	@Override
 	protected void onResume() {
@@ -540,12 +557,36 @@ public class DemoActivity extends Activity {
 		return true;
 	}
 
-
-
-
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
+	}
+
+	private void showGPSDisabledAlertToUser() {
+		// TODO Auto-generated method stub
+		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+		alertDialogBuilder
+				.setMessage(
+						"GPS is disabled in your device. Would you like to enable it?")
+				.setCancelable(false)
+				.setPositiveButton("Goto Settings Page To Enable GPS",
+
+				new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						Intent callGPSSettingIntent = new Intent(
+								android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+						startActivity(
+								callGPSSettingIntent);
+					}
+				});
+		// alertDialogBuilder.setNegativeButton("Cancel",
+		// new DialogInterface.OnClickListener() {
+		// public void onClick(DialogInterface dialog, int id) {
+		// dialog.cancel();
+		// }
+		// });
+		AlertDialog alert = alertDialogBuilder.create();
+		alert.show();
 	}
 
 }
