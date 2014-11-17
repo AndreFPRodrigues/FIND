@@ -12,6 +12,8 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 import find.service.R;
 import find.service.gcm.map.DownloadFile;
 import find.service.net.diogomarques.wifioppish.NodeIdentification;
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -50,6 +52,7 @@ public class SplashScreen extends Activity {
 	private Context context;
 	private TextView connectionDetails;
 	private TextView registrationDetails;
+	private String accountName;
 	/**
 	 * Substitute you own sender ID here. This is the project number you got
 	 * from the API Console, as described in "Getting Started."
@@ -95,7 +98,10 @@ public class SplashScreen extends Activity {
 					if (!bd.exists()) {
 						DownloadFile.downloadTileDB();
 					}
-
+					AccountManager accountM = (AccountManager) context
+							.getSystemService(context.ACCOUNT_SERVICE);
+					Account[] list = accountM.getAccounts();
+					accountName = ((list[0].name.split("@"))[0]);
 					WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 					WifiInfo info = manager.getConnectionInfo();
 
@@ -119,7 +125,7 @@ public class SplashScreen extends Activity {
 
 						} else {
 							registrationDetails.setText("Already Registered");
-							RequestServer.register(address, regid);
+							RequestServer.register(address, regid,accountName);
 							sendToActivity();				
 							
 						}
@@ -175,8 +181,8 @@ public class SplashScreen extends Activity {
 						regid = gcm.register(SENDER_ID);
 
 					msg = "Device registered, registration ID=" + regid;
-
-					RequestServer.register(address, regid);
+					
+					RequestServer.register(address, regid, accountName);
 
 					// For this demo: we don't need to send it because the
 					// device will send
