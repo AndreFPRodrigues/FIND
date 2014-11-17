@@ -115,7 +115,10 @@ public class DemoActivity extends Activity {
 		test = (TextView) findViewById(R.id.with);
 		serviceActivate = (Button) findViewById(R.id.sservice);
 		indexSimu = -1;
-
+		final SharedPreferences prefs = getSharedPreferences(
+				DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
+		regid = prefs.getString(SplashScreen.PROPERTY_REG_ID, "");
+		
 		if (!((LocationManager) context
 				.getSystemService(Context.LOCATION_SERVICE))
 				.isProviderEnabled(LocationManager.GPS_PROVIDER)) {

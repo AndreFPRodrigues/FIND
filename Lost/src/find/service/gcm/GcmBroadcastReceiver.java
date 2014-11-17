@@ -133,7 +133,12 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 		Log.d(TAG, "timeleft: " + timeleft);
 
-		// retriving last best location
+		// retrieving last best location
+		
+
+		Notifications
+		.generateNotification(c, "Retrieving location!");
+		
 		Location l = LocationFunctions.getBestLocation(context);
 		if (l == null || LocationFunctions.oldLocation(l)) {
 			Log.d(TAG, "old or null location");
@@ -146,6 +151,9 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 		} else {
 
+			Notifications
+			.generateNotification(c, "Location Found!");
+			
 			// prompt pop up window
 			currentLoc = l;
 			startPopUp(new double[] { currentLoc.getLatitude(),
@@ -175,7 +183,8 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		boolean checkedLocation = preferences.getBoolean("location", false);
 		if (!checkedLocation) {
 			Log.d(TAG, "Confirm location is within bounds");
-
+			
+			
 			ls = new LocationSensor(c);
 			ls.startSensor();
 			isInSimulationLocation(preferences.getFloat("latS", 0),
@@ -211,6 +220,9 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 					latE, lonE);
 			if (!isInside) {
 				Log.d(TAG, "Stopping: not inside bounds");
+				
+				Notifications
+				.generateNotification(c, "Not inside bounds!");
 				return;
 			}
 			RequestServer.sendCoordinates(NodeIdentification.getMyNodeId(c), center, LocationFunctions.getBatteryLevel(c));
@@ -346,7 +358,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 				DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
 		c.stopService(svcIntent);
 		regSimulationContentProvider("");
-		String regid = prefs.getString(DemoActivity.PROPERTY_REG_ID, "");
+		String regid = prefs.getString(SplashScreen.PROPERTY_REG_ID, "");
 
 		deletePoints(regid);
 		c.deleteDatabase("LOSTMessages");
@@ -376,6 +388,10 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			double[] value = (double[]) ls.getCurrentValue();
 			if (value[0] != 0) {
 				ls.stopSensor();
+				
+				Notifications
+				.generateNotification(c, "Location Found!");
+				
 				startPopUp(value);
 			} else {
 
@@ -394,6 +410,10 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			handler.postDelayed(runnable, locationTimeout);
 			attempts++;
 		} else {
+			
+			Notifications
+			.generateNotification(c, "Undefined location!");
+			
 			ls.stopSensor();
 			startPopUp(null);
 		}
