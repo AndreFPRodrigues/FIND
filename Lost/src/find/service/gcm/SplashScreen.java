@@ -182,7 +182,7 @@ public class SplashScreen extends Activity {
 
 					msg = "Device registered, registration ID=" + regid;
 					
-					RequestServer.register(address, regid, accountName);
+					RequestServer.register(address, regid, accountName); 
 
 					// For this demo: we don't need to send it because the
 					// device will send
