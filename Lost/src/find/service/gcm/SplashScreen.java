@@ -77,7 +77,7 @@ public class SplashScreen extends Activity {
 		
 		AccountManager accountM= (AccountManager) context 
 				.getSystemService(context.ACCOUNT_SERVICE);
-		Account[] list =  accountM.getAccounts();
+		Account[] list =  accountM.getAccountsByType("com.google");
 		account =((list[0].name.split("@"))[0]);
 		//check if registered
 		if(checkIfRegistered()) {
