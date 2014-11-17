@@ -65,11 +65,31 @@ public class SplashScreen extends Activity {
 		connectionDetails = (TextView) findViewById(R.id.connectionDetails);
 		registrationDetails = (TextView) findViewById(R.id.registerDetails);
 
-		iterateHandler();
+		WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		WifiInfo info = manager.getConnectionInfo();
 
+		//gets mac_address (user identification)
+		address = info.getMacAddress();
+		address = NodeIdentification.getNodeId(address);
+		
+		//check if registered
+		if(checkIfRegistered()) {
+
+			//if registered send again to server and go to demoAcitivity
+
+			RequestServer.register(address, regid);
+
+			Intent i = new Intent(SplashScreen.this, DemoActivity.class);
+			startActivity(i);
+
+			// close this activity
+			finish();
+			
+
+		} else iterateHandler();
 
 	}
-	
+
 	private void iterateHandler() {
 		new Handler().postDelayed(new Runnable() {
 
@@ -83,10 +103,10 @@ public class SplashScreen extends Activity {
 
 				//checks if there is internet connection
 				if (RequestServer.netCheckin(context))  {
-					
+
 					connectionDetails.setText("Network Found!");
-					
-					
+
+
 					//Checks if the BD responsible for the tiles exits, if not download the file from the server
 					// set the tile provider and database
 					File bd = new File(Environment.getExternalStorageDirectory()
@@ -96,65 +116,59 @@ public class SplashScreen extends Activity {
 						DownloadFile.downloadTileDB();
 					}
 
-					WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-					WifiInfo info = manager.getConnectionInfo();
-
-					//gets mac_address (user identification)
-					address = info.getMacAddress();
-					address = NodeIdentification.getNodeId(address);
-
-					// Check device for Play Services APK. If check succeeds, proceed
-					// with
-					// GCM registration and get active simulations. 
-					if (checkPlayServices()) {
-						gcm = GoogleCloudMessaging.getInstance(context);
-						regid = getRegistrationId(context);
-
-						if (regid.isEmpty()) {
-							registerInBackground();
-
-							registrationDetails.setText("Registering");
-							
-							sendToActivity();
-
-						} else {
-							registrationDetails.setText("Already Registered");
-							RequestServer.register(address, regid);
-							sendToActivity();				
-							
-						}
+					
 
 
-						Log.d(TAG, regid);
+					//has network, register and go to demoActivity
 
-					} else {
-						Log.i(TAG, "No valid Google Play Services APK found.");
-					}
+					registerInBackground();
+
+					sendToActivity();
+
 				} else {
 					connectionDetails.setText("No Network Found!");
 					iterateHandler();
 				}
-
-				
 			}
 		}, 1000);
-		
+
 	}
-	
+
+	private boolean checkIfRegistered() {
+		// Check device for Play Services APK. If check succeeds, proceed
+		// with
+		// GCM registration and get active simulations. 
+		if(checkPlayServices()) {
+			gcm = GoogleCloudMessaging.getInstance(context);
+			regid = getRegistrationId(context);
+			Log.d(TAG, regid);
+
+			if(regid.isEmpty()) return false;
+
+			else return true;		
+
+
+		} else {
+			Log.i(TAG, "No valid Google Play Services APK found.");
+			return false;
+		}
+
+	}
+
 	private void sendToActivity(){
 		new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-            	Intent i = new Intent(SplashScreen.this, DemoActivity.class);
+			@Override
+			public void run() {
+				Intent i = new Intent(SplashScreen.this, DemoActivity.class);
 				startActivity(i);
-				
+
 				// close this activity
 				finish();
-            }
-        }, 1000);
+			}
+		}, 1000);
 	}
-	
-	
+
+
 
 	/**
 	 * Registers the application with GCM servers asynchronously.
