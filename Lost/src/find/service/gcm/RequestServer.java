@@ -38,11 +38,12 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.util.Log;
 
 public class RequestServer {
 
 	private static String postCoordinates = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims";
-
+	private static String TAG = "gcm";
 	/**
 	 * Check if there is wifi connection
 	 * 
@@ -73,9 +74,9 @@ public class RequestServer {
 
 		URL url;
 		try {
-
-			url = new URL(endpoint);
-
+ 
+			url = new URL(endpoint);  
+ 
 		} catch (MalformedURLException e) {
 			throw new IllegalArgumentException("invalid url: " + endpoint);
 		}
@@ -87,7 +88,7 @@ public class RequestServer {
 		while (iterator.hasNext()) {
 			Entry<String, String> param = iterator.next();
 			bodyBuilder.append(param.getKey()).append('=')
-					.append(param.getValue());
+					.append(param.getValue()); 
 			if (iterator.hasNext()) {
 				bodyBuilder.append('&');
 			}
@@ -119,7 +120,7 @@ public class RequestServer {
 				// Append server response in string
 				sb.append(line + "\n");
 			}
-			reader.close();
+			reader.close(); 
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		} finally {
@@ -132,7 +133,7 @@ public class RequestServer {
 	}
 
 	// Register this account with the server.
-	public static void register(final String mac, final String regId) {
+	public static void register(final String mac, final String regId, final String email) {
 
 		new AsyncTask<Void, Void, String>() {
 			@Override
@@ -142,7 +143,8 @@ public class RequestServer {
 				Map<String, String> params = new HashMap<String, String>();
 				params.put("regId", regId);
 				params.put("mac", mac);
-
+				params.put("email", email);
+				Log.d(TAG, "email: " + email);
 				// Post registration values to web server
 				try {
 					RequestServer.post(serverUrl, params);
