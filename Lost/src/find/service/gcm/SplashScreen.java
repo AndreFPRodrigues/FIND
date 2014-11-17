@@ -69,7 +69,7 @@ public class SplashScreen extends Activity {
 		WifiInfo info = manager.getConnectionInfo();
 
 		//gets mac_address (user identification)
-		address = info.getMacAddress();
+		address = info.getMacAddress(); 
 		address = NodeIdentification.getNodeId(address);
 		
 		//check if registered
