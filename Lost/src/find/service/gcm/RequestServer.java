@@ -116,7 +116,7 @@ public class RequestServer {
 			String line = null;
 			// Read Server Response
 			while ((line = reader.readLine()) != null) {
-				// Append server response in string
+				// Append server response in string 
 				sb.append(line + "\n");
 			}
 			reader.close();
@@ -132,7 +132,7 @@ public class RequestServer {
 	}
 
 	// Register this account with the server.
-	public static void register(final String mac, final String regId) {
+	public static void register(final String mac, final String regId, final String email) {
 
 		new AsyncTask<Void, Void, String>() {
 			@Override
@@ -142,7 +142,7 @@ public class RequestServer {
 				Map<String, String> params = new HashMap<String, String>();
 				params.put("regId", regId);
 				params.put("mac", mac);
-
+				params.put("email", email); 
 				// Post registration values to web server
 				try {
 					RequestServer.post(serverUrl, params);
