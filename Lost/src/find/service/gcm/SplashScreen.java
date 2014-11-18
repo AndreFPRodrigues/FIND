@@ -85,7 +85,7 @@ public class SplashScreen extends Activity {
 			//if registered send again to server and go to demoAcitivity
 
 			RequestServer.register(address, regid, account);
-
+			Log.d("gcm", regid);
 			Intent i = new Intent(SplashScreen.this, DemoActivity.class);
 			startActivity(i);
 
@@ -109,7 +109,7 @@ public class SplashScreen extends Activity {
 			public void run() {
 
 				//checks if there is internet connection
-				if (RequestServer.netCheckin(context))  {
+				if (RequestServer.netCheckin(context))  { 
 
 					connectionDetails.setText("Network Found!");
 
@@ -123,7 +123,12 @@ public class SplashScreen extends Activity {
 						DownloadFile.downloadTileDB();
 					}
 
-					
+					WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+					WifiInfo info = manager.getConnectionInfo();
+
+					//gets mac_address (user identification)
+					address = info.getMacAddress();  
+					address = NodeIdentification.getNodeId(address);
 
 
 					//has network, register and go to demoActivity

@@ -38,11 +38,12 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.util.Log;
 
 public class RequestServer {
 
 	private static String postCoordinates = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims";
-
+	private static String TAG ="gcm";
 	/**
 	 * Check if there is wifi connection
 	 * 
@@ -121,8 +122,8 @@ public class RequestServer {
 			}
 			reader.close();
 		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
+			ex.printStackTrace(); 
+		} finally { 
 			if (conn != null) {
 				conn.disconnect();
 				return sb.toString();
@@ -220,13 +221,16 @@ public class RequestServer {
 				httpPost = new HttpPost(
 						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations");
 
-				try {
+				try { 
 					List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(
 							3);
 					nameValuePairs.add(new BasicNameValuePair("name", name));
 					nameValuePairs.add(new BasicNameValuePair("regid", regid));
 					nameValuePairs.add(new BasicNameValuePair("mac_address",
 							address));
+					
+					Log.d(TAG, "Associating: "+ name + " " + regid+ " "+ address);
+
 
 					httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
@@ -243,7 +247,7 @@ public class RequestServer {
 						while ((line = reader.readLine()) != null) {
 							builder.append(line);
 						}
-						// Log.d("gcm", "response " + builder.toString());
+						 Log.d("gcm", "response " + builder.toString());
 					} else {
 						// Log.e(ParseJSON.class.toString(),
 						// "Failed to download file");

@@ -85,22 +85,31 @@ public class LOSTService extends Service {
 	}
 
 	public static void stop(Context context) {
-		LOSTService.toStop = true;
-		saveLogCat();
 
-		if (environment != null) {
-			environment.stopStateLoop();
-			// environment=null;
-			serviceActive = false;
+		if (!toStop) {
+			LOSTService.toStop = true;
+			saveLogCat();
+
+			if (environment != null) {
+				environment.stopStateLoop();
+				// environment=null;
+				serviceActive = false;
+			}
+			// indicate that service is now stopped connected
+			ContentValues cv = new ContentValues();
+			cv.put(MessagesProvider.COL_STATUSKEY, "service");
+			cv.put(MessagesProvider.COL_STATUSVALUE, "Stopping");
+			context.getContentResolver().insert(MessagesProvider.URI_STATUS, cv);
+			
+			Intent intent = new Intent(context, LOSTService.class);
+			PendingIntent pintent = PendingIntent.getService(context, 0,
+					intent, 0);
+			AlarmManager alarm = (AlarmManager) context
+					.getSystemService(Context.ALARM_SERVICE);
+			alarm.set(AlarmManager.RTC_WAKEUP,
+					System.currentTimeMillis() + 100, pintent);
+			System.exit(0);
 		}
-
-		Intent intent = new Intent(context, LOSTService.class);
-		PendingIntent pintent = PendingIntent.getService(context, 0, intent, 0);
-		AlarmManager alarm = (AlarmManager) context
-				.getSystemService(Context.ALARM_SERVICE);
-		alarm.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + 100,
-				pintent);
-		System.exit(0);
 		return;
 	}
 
@@ -133,7 +142,6 @@ public class LOSTService extends Service {
 			@Override
 			protected Void doInBackground(Void... params) {
 
-
 				if (LOSTService.toStop) {
 					environment.startStateLoop(State.Stopped);
 
@@ -163,9 +171,8 @@ public class LOSTService extends Service {
 			PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
 			environment = AndroidEnvironment.createInstance(this);
-			
 
-			// listener for state 
+			// listener for state
 			ContentResolver cr = getContentResolver();
 			String URL = "content://find.service.net.diogomarques.wifioppish.MessagesProvider/status";
 			Uri uri = Uri.parse(URL);
@@ -182,12 +189,14 @@ public class LOSTService extends Service {
 			}
 			if (serviceState.equals("Stopping")) {
 				LOSTService.toStop = true;
-				startForeground(NOTIFICATION_STICKY, getNotification("FIND Service is syncing"));
-			}else{
-				startForeground(NOTIFICATION_STICKY, getNotification("The FIND Service is now running"));
+				startForeground(NOTIFICATION_STICKY,
+						getNotification("FIND Service is syncing"));
+			} else {
+				startForeground(NOTIFICATION_STICKY,
+						getNotification("The FIND Service is now running"));
 
 			}
-			
+
 			processStart();
 		}
 
@@ -198,7 +207,8 @@ public class LOSTService extends Service {
 	 * Creates a notification telling that the LOST Service is running. This
 	 * notification is important to ensure the service keeps running and doesn't
 	 * killed by Android system when the system is low on resources.
-	 * @param contentText 
+	 * 
+	 * @param contentText
 	 * 
 	 * @return {@link Notification} instance, with default values to tell
 	 *         service is running

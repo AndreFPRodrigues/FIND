@@ -481,11 +481,7 @@ public class AndroidEnvironment implements IEnvironment {
 	public void stopStateLoop() {
 		
 
-		// indicate that service is now stopped connected
-		ContentValues cv = new ContentValues();
-		cv.put(MessagesProvider.COL_STATUSKEY, "service");
-		cv.put(MessagesProvider.COL_STATUSVALUE, "Stopping");
-		context.getContentResolver().insert(MessagesProvider.URI_STATUS, cv);
+		
 
 		// disable sensors and remote hotspot feature
 		sensorGroup.removeAllSensors(true);

@@ -72,7 +72,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	String date;
 	double latS;
 	double lonS;
-	double latE;
+	double latE; 
 	double lonE;
 	Intent intent;
 

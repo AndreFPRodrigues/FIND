@@ -34,7 +34,7 @@ import android.widget.TextView;
 public class VictimActivity extends Activity {
 	
 	// controls
-	private ImageView imgStatus;
+	private ImageView imgStatus; 
 	private TextView txtStatusDesc;
 	private EditText editMessage;
 	private Button btnSendMessage;
