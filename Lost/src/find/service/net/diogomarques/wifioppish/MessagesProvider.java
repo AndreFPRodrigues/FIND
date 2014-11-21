@@ -68,6 +68,15 @@ public class MessagesProvider extends ContentProvider {
 	public static final Uri URI_SIMULATION_CUSTOM = Uri.parse(PROVIDER_URL
 			+ METHOD_SIMULATION + "/*");
 	public static final int URI_SIMULATION_CUSTOM_CODE = 10;
+	
+	
+	public static final String METHOD_TRUNCATE = "truncate";
+	public static final Uri URI_TRUNCATE= Uri
+			.parse(PROVIDER_URL + METHOD_TRUNCATE);
+	public static final int URI_TRUNCATE_CODE = 11;
+
+	
+
 
 	// database fields
 	public static final String COL_ID = "_id";
@@ -90,6 +99,9 @@ public class MessagesProvider extends ContentProvider {
 	public static final String COL_STATUSVALUE = "statusvalue";
 	public static final String COL_SIMUKEY = "simukey";
 	public static final String COL_SIMUVALUE = "simuvalue";
+	public static final String COL_SIMU_DATE = "simudate";
+	public static final String COL_SIMU_DURATION = "simuduration";
+	public static final String COL_SIMU_LOCAL = "simulocal";
 
 	// constants - direction
 	public static final String MSG_SENT = "sent";
@@ -107,6 +119,7 @@ public class MessagesProvider extends ContentProvider {
 		uriMatcher.addURI(PROVIDER, METHOD_RECEIVED, URI_RECEIVED_CODE);
 		uriMatcher.addURI(PROVIDER, METHOD_SENT, URI_SENT_CODE);
 		uriMatcher.addURI(PROVIDER, METHOD_CUSTOM, URI_CUSTOM_CODE);
+		
 		uriMatcher.addURI(PROVIDER, METHOD_CUSTOM + "/#", URI_CUSTOM_ID_CODE);
 		uriMatcher.addURI(PROVIDER, METHOD_RECEIVED + "/*",
 				URI_RECEIVED_ID_CODE);
@@ -117,6 +130,8 @@ public class MessagesProvider extends ContentProvider {
 		uriMatcher.addURI(PROVIDER, METHOD_SIMULATION, URI_SIMULATION_CODE);
 		uriMatcher.addURI(PROVIDER, METHOD_SIMULATION + "/*",
 				URI_SIMULATION_CUSTOM_CODE);
+		uriMatcher.addURI(PROVIDER, METHOD_TRUNCATE, URI_TRUNCATE_CODE);
+
 	}
 
 	// database declarations
@@ -154,7 +169,8 @@ public class MessagesProvider extends ContentProvider {
 			+ " TEXT)";
 	static final String CREATE_TABLE_SIMULATION = " CREATE TABLE "
 			+ TABLE_SIMULATION + " (" + COL_SIMUKEY + " TEXT," + " "
-			+ COL_SIMUVALUE + " TEXT)";
+			+ COL_SIMUVALUE + " TEXT, " + COL_SIMU_DATE + " TEXT, "
+			+ COL_SIMU_DURATION + " TEXT, " + COL_SIMU_LOCAL + " TEXT" + ")";
 
 	// class that creates and manages the provider's database
 	private static class DBHelper extends SQLiteOpenHelper {
@@ -247,6 +263,9 @@ public class MessagesProvider extends ContentProvider {
 							null);
 				}
 				break;
+			case URI_TRUNCATE_CODE:
+				
+				break;
 			}
 		} catch (SQLException e) {
 			Log.w(TAG, "Tried to insert duplicate data, records not changed", e);
@@ -337,6 +356,9 @@ public class MessagesProvider extends ContentProvider {
 			String key2 = uri.getLastPathSegment();
 			queryBuilder.appendWhere(COL_SIMUKEY + "=\"" + key2 + "\"");
 			break;
+		case URI_TRUNCATE_CODE:
+		
+			break;
 
 		default:
 			Log.w(TAG, "Unknown URI to query:" + uri);
@@ -406,6 +428,12 @@ public class MessagesProvider extends ContentProvider {
 							+ id
 							+ (!TextUtils.isEmpty(selection) ? " AND ("
 									+ selection + ')' : ""), selectionArgs);
+		case URI_TRUNCATE_CODE:
+			database.execSQL("delete from "+ TABLE_OUTGOING);
+			database.execSQL("delete from "+ TABLE_INCOMING);
+			database.execSQL("delete from "+ TABLE_TOSEND);
+	
+
 			break;
 		}
 

@@ -23,6 +23,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
@@ -121,7 +122,13 @@ public class LOSTService extends Service {
 		Intent svcIntent = new Intent(
 				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
 
-		context.deleteDatabase("LOSTMessages");
+		//context.deleteDatabase("LOSTMessages");
+		ContentResolver cr = environment.getAndroidContext()
+				.getContentResolver();
+		cr.query(Uri
+				.parse("content://find.service.net.diogomarques.wifioppish.MessagesProvider/customsend"),
+				null, "", null, "");
+
 
 		ContentValues cv = new ContentValues();
 		cv.put(MessagesProvider.COL_STATUSKEY, "service");
@@ -187,6 +194,7 @@ public class LOSTService extends Service {
 					}
 				} while (c.moveToNext());
 			}
+			c.close();
 			if (serviceState.equals("Stopping")) {
 				LOSTService.toStop = true;
 				startForeground(NOTIFICATION_STICKY,

@@ -2,6 +2,8 @@ package find.service.net.diogomarques.wifioppish;
 
 import java.util.List;
 
+import android.content.Context;
+
 import find.service.net.diogomarques.wifioppish.networking.Message;
 import find.service.net.diogomarques.wifioppish.sensors.SensorGroup;
 
@@ -203,4 +205,6 @@ public interface IEnvironment {
 	 * @return SensorGroup instance
 	 */
 	public abstract SensorGroup getSensorGroup();
+
+	Context getAndroidContext();
 }

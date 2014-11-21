@@ -312,5 +312,42 @@ public class RequestServer {
 		}.execute(null, null, null);
 
 	}
+	
+	protected static void deletePoints(final String regid) {
+		new AsyncTask<Void, Void, String>() {
+			@Override
+			protected String doInBackground(Void... params) {
+				StringBuilder builder = new StringBuilder();
+				HttpClient client = new DefaultHttpClient();
+				HttpGet httpGet;
+
+				httpGet = new HttpGet(
+						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations/deletePoints/"
+								+ regid);
+
+				try {
+					HttpResponse response = client.execute(httpGet);
+					StatusLine statusLine = response.getStatusLine();
+					int statusCode = statusLine.getStatusCode();
+					if (statusCode == 200) {
+						HttpEntity entity = response.getEntity();
+						InputStream content = entity.getContent();
+						BufferedReader reader = new BufferedReader(
+								new InputStreamReader(content));
+						String line;
+						while ((line = reader.readLine()) != null) {
+							builder.append(line);
+						}
+					}
+				} catch (ClientProtocolException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+				return null;
+			}
+		}.execute(null, null, null);
+	}
 
 }

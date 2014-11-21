@@ -25,15 +25,17 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="25dp"
         android:gravity="center_horizontal"
-        android:orientation="horizontal" > 
+        android:orientation="horizontal" >
+
         <TextView
             android:id="@+id/with"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="No simulation associated"
+            android:text="@string/noSimulations"
             android:textSize="15dp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:visibility="gone" />
     </LinearLayout>
 
     <LinearLayout
@@ -46,8 +48,9 @@
             android:id="@+id/associate"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:enabled="false"
             android:onClick="associate"
-            android:text="Associate to Simulation" />
+            android:text="@string/noSimulations" />
 
         <!--
             <Button
@@ -64,7 +67,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="25dp"
-            android:text="Simulation association"
+            android:text="@string/associationPreferences"
             android:textSize="15dp"
             android:textStyle="bold" />
 

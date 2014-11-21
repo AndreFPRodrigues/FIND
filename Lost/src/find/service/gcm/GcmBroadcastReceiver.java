@@ -16,7 +16,7 @@
 package find.service.gcm;
 
 import java.io.BufferedReader;
-import java.io.IOException; 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import org.apache.http.HttpEntity;
@@ -60,10 +60,10 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	private final int STOP = 3;
 	private final int RADIUS_DOWNLOAD = 1;
 	private Context c;
- 
+
 	private long locationTimeout;
-	private long locationTimer;  
-	private int number_attempts = 5; 
+	private long locationTimer;
+	private int number_attempts = 5;
 	private int attempts = 1;
 	private Location currentLoc = null;
 
@@ -72,10 +72,11 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	String date;
 	double latS;
 	double lonS;
-	double latE; 
+	double latE;
 	double lonE;
 	Intent intent;
 
+	private boolean debug = true;
 	private LocationSensor ls;
 
 	@Override
@@ -86,12 +87,11 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		this.intent = intent;
 
 		// check if its alarm to start the service and enables it
-		if (intent.getAction().equals("startAlarm")) {
+		/*if (intent.getAction().equals("startAlarm")) {
 			Log.d(TAG, "Handling alarm");
-
 			handleAlarm();
 			return;
-		}
+		}*/
 
 		// get data from push notification
 		type = intent.getExtras().getString("type");
@@ -104,9 +104,9 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			if (tp == STOP) {
 				Log.d(TAG, "Stopping service");
 				Notifications
-						.generateNotification(c, "terminating the service");
+						.generateNotification(c, "FIND Service","Terminating the service", null);
 
-				regSimulationContentProvider("");
+				Simulation.regSimulationContentProvider("","","","",c);
 				LOSTService.stop(c);
 				return;
 			}
@@ -134,11 +134,12 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		Log.d(TAG, "timeleft: " + timeleft);
 
 		// retrieving last best location
-		
 
-		Notifications
-		.generateNotification(c, "Retrieving location!");
-		
+		Notifications.generateNotification(c, "Alert", "Retrieving location!", null);
+		if (debug) {
+			startPopUp(null);
+			return;
+		}
 		Location l = LocationFunctions.getBestLocation(context);
 		if (l == null || LocationFunctions.oldLocation(l)) {
 			Log.d(TAG, "old or null location");
@@ -151,9 +152,8 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 		} else {
 
-			Notifications
-			.generateNotification(c, "Location Found!");
-			
+			Notifications.generateNotification(c,"Alert" , "Location Found!", null);
+
 			// prompt pop up window
 			currentLoc = l;
 			startPopUp(new double[] { currentLoc.getLatitude(),
@@ -162,37 +162,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 	}
 
-	/**
-	 * Handles the start service alarm
-	 */
-	private void handleAlarm() {
-		boolean reset = intent.getBooleanExtra("reset", false);
-		if (reset) {
-			Log.d(TAG, "reset");
-			return;
-		}
-		Log.d(TAG, "received alarm intent starting service");
-
-		Intent svcIntent = new Intent(
-				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
-		c.startService(svcIntent);
-
-		final SharedPreferences preferences = c.getApplicationContext()
-				.getSharedPreferences("Lost",
-						android.content.Context.MODE_PRIVATE);
-		boolean checkedLocation = preferences.getBoolean("location", false);
-		if (!checkedLocation) {
-			Log.d(TAG, "Confirm location is within bounds");
-			
-			
-			ls = new LocationSensor(c);
-			ls.startSensor();
-			isInSimulationLocation(preferences.getFloat("latS", 0),
-					preferences.getFloat("lonS", 0),
-					preferences.getFloat("latE", 0),
-					preferences.getFloat("lonE", 0));
-		}
-	}
+	
 
 	/**
 	 * Prompt timed pop-up asking if the user wishes to associate himself with
@@ -220,12 +190,12 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 					latE, lonE);
 			if (!isInside) {
 				Log.d(TAG, "Stopping: not inside bounds");
-				
-				Notifications
-				.generateNotification(c, "Not inside bounds!");
+
+				Notifications.generateNotification(c,"Alert" ,"Not inside bounds!", null);
 				return;
 			}
-			RequestServer.sendCoordinates(NodeIdentification.getMyNodeId(c), center, LocationFunctions.getBatteryLevel(c));
+			RequestServer.sendCoordinates(NodeIdentification.getMyNodeId(c),
+					center, LocationFunctions.getBatteryLevel(c));
 			LatLng start = LocationFunctions.adjustCoordinates(center,
 					RADIUS_DOWNLOAD, 135);
 			intent.putExtra("latS", start.latitude);
@@ -261,121 +231,19 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 		// timed popup dialog
 		Log.d(TAG, "Starting pop up");
-		intent.setClass(c, PopUpActivity.class);
+		intent.setClass(c, AssociationActivity.class);
 		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		c.startActivity(intent);
 
 	}
 
-	protected void deletePoints(final String regid) {
-		new AsyncTask<Void, Void, String>() {
-			@Override
-			protected String doInBackground(Void... params) {
-				StringBuilder builder = new StringBuilder();
-				HttpClient client = new DefaultHttpClient();
-				HttpGet httpGet;
+	
 
-				httpGet = new HttpGet(
-						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations/deletePoints/"
-								+ regid);
 
-				try {
-					HttpResponse response = client.execute(httpGet);
-					StatusLine statusLine = response.getStatusLine();
-					int statusCode = statusLine.getStatusCode();
-					if (statusCode == 200) {
-						HttpEntity entity = response.getEntity();
-						InputStream content = entity.getContent();
-						BufferedReader reader = new BufferedReader(
-								new InputStreamReader(content));
-						String line;
-						while ((line = reader.readLine()) != null) {
-							builder.append(line);
-						}
-					}
-				} catch (ClientProtocolException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
 
-				return null;
-			}
-		}.execute(null, null, null);
-	}
 
-	private void regSimulationContentProvider(String value) {
-		ContentValues cv = new ContentValues();
-		cv.put(MessagesProvider.COL_SIMUKEY, "simulation");
-		cv.put(MessagesProvider.COL_SIMUVALUE, value);
-		c.getContentResolver().insert(MessagesProvider.URI_SIMULATION, cv);
-	}
 
-	// On service start verify if the user is in a affected area
-	Handler verifyLoc = new Handler();
 
-	public class MyRunnable implements Runnable {
-		private float lat;
-		private float lat2;
-		private float lon;
-		private float lon2;
-
-		public MyRunnable(float lat, float lat2, float lon, float lon2) {
-			this.lat = lat;
-			this.lat2 = lat2;
-			this.lon = lon;
-			this.lon2 = lon2;
-		}
-
-		public void run() {
-			double[] value = (double[]) ls.getCurrentValue();
-			if (value[0] != 0) {
-				if (!LocationFunctions
-						.isInLocation(value, lat, lon, lat2, lon2)) {
-					stop();
-					Log.d(TAG, "Not in location");
-				}
-				Log.d(TAG, "In location");
-
-			} else {
-				Log.d(TAG, "Undefined location");
-				isInSimulationLocation(lat, lon, lat2, lon2);
-
-			}
-		}
-	}
-
-	/**
-	 * Stops the service the user is not in location and deletes all points
-	 */
-	private void stop() {
-		Log.d(TAG, "Stopping service");
-		Notifications.generateNotification(c, "The simulation has stopped");
-
-		Intent svcIntent = new Intent(
-				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
-		final SharedPreferences prefs = c.getSharedPreferences(
-				DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
-		c.stopService(svcIntent);
-		regSimulationContentProvider("");
-		String regid = prefs.getString(SplashScreen.PROPERTY_REG_ID, "");
-
-		deletePoints(regid);
-		c.deleteDatabase("LOSTMessages");
-
-		Intent mStartActivity = new Intent(c, DemoActivity.class);
-		int mPendingIntentId = 123456;
-		PendingIntent mPendingIntent = PendingIntent.getActivity(c,
-				mPendingIntentId, mStartActivity,
-				PendingIntent.FLAG_CANCEL_CURRENT);
-		AlarmManager mgr = (AlarmManager) c
-				.getSystemService(Context.ALARM_SERVICE);
-		mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100,
-				mPendingIntent);
-		System.exit(0);
-		return;
-
-	}
 
 	/**
 	 * Try to gather location from gps start popup activity if it gets it
@@ -388,10 +256,9 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			double[] value = (double[]) ls.getCurrentValue();
 			if (value[0] != 0) {
 				ls.stopSensor();
-				
-				Notifications
-				.generateNotification(c, "Location Found!");
-				
+
+				Notifications.generateNotification(c, "Alert", "Location Found!", null);
+
 				startPopUp(value);
 			} else {
 
@@ -410,33 +277,14 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			handler.postDelayed(runnable, locationTimeout);
 			attempts++;
 		} else {
-			
-			Notifications
-			.generateNotification(c, "Undefined location!");
-			
+
+			Notifications.generateNotification(c,"Alert" ,"Undefined location!", null);
+
 			ls.stopSensor();
 			startPopUp(null);
 		}
 	}
 
-	/**
-	 * Verify if
-	 * 
-	 * @param lat
-	 *            - top left latitude
-	 * @param lon
-	 *            - top left longitude
-	 * @param lat2
-	 *            - bottom right latitude
-	 * @param lon2
-	 *            - bottom right longitude
-	 */
-	private void isInSimulationLocation(float lat, float lon, float lat2,
-			float lon2) {
-
-		verifyLoc.postDelayed(new MyRunnable(lat, lon, lat2, lon2), 30000);
-
-	}
 
 
 }

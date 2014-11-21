@@ -107,10 +107,14 @@ public class Simulation {
 	 * Registers the simulation name in the content provider
 	 * @param value
 	 */
-	public  static void regSimulationContentProvider(String value, Context context) {
+	public  static void regSimulationContentProvider(String name, String date, String duration, String local, Context context) {
 		ContentValues cv = new ContentValues();
 		cv.put(MessagesProvider.COL_SIMUKEY, "simulation");
-		cv.put(MessagesProvider.COL_SIMUVALUE, value);
+		cv.put(MessagesProvider.COL_SIMUVALUE, name);
+		cv.put(MessagesProvider.COL_SIMU_DATE, date);
+		cv.put(MessagesProvider.COL_SIMU_DURATION, duration);
+		cv.put(MessagesProvider.COL_SIMU_LOCAL, local);
+
 		context.getContentResolver()
 				.insert(MessagesProvider.URI_SIMULATION, cv);
 

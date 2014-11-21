@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!--  branding and titles  -->
+    <!-- branding and titles -->
     <string name="app_name">FIND Service</string>
     <string name="icon_label">FIND Settings</string>
-    
+
     <!-- settings default values -->
     <string name="value_t_beac">10000</string>
     <string name="value_t_pro">40000</string>
@@ -14,7 +14,7 @@
     <string name="value_t_freq">2000</string>
     <string name="value_t_api">http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest</string>
     <string name="value_t_web">5000</string>
-    
+
     <!-- settings keys for storing and retrieving values -->
     <string name="key_t_beac">t_beac</string>
     <string name="key_t_pro">t_pro</string>
@@ -26,7 +26,7 @@
     <string name="key_internet">internet</string>
     <string name="key_t_web">t_web</string>
     <string name="key_t_nodeid">t_nodeid</string>
-    
+
     <!-- settings labels -->
     <string name="t_pro_title">Minimum time (ms) a mobile device is providing access point functionality for connected stations</string>
     <string name="t_beac_title">Minimum time (ms) advertising presence in access point mode</string>
@@ -42,4 +42,11 @@
     <string name="t_web_desc">Minimum time (ms) to stay connected to Internet before changing to next state.</string>
     <string name="t_nodeid_title">Node ID</string>
     <string name="t_nodeid_desc">Node ID to use. No spaces please. If empty, a new node ID will be generated to this node on next start.</string>
+    <string name="associationPreferences">Association Preferences</string>
+    <string name="stopService">Stop Service</string>
+    <string name="noSimulations">No alerts available</string>
+    <string name="associate">Associate with alert</string>
+    <string name="disassociate">Disassociate from alert</string>
+    <string name="syncService"> Waiting for internet connection to sync files</string>
+
 </resources>

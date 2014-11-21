@@ -11,14 +11,15 @@ import find.service.org.json.JSONArray;
 import find.service.org.json.JSONObject;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager.NameNotFoundException;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -61,6 +62,8 @@ public class DemoActivity extends Activity {
 	public static final String PROPERTY_REG_ID = "registration_id";
 	private static final String PROPERTY_APP_VERSION = "appVersion";
 	private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+
+	private final int DISASSOCIATE_THRESHOLD = 1000 * 60 * 3;
 
 	/**
 	 * Substitute you own sender ID here. This is the project number you got
@@ -107,6 +110,36 @@ public class DemoActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		Log.d(TAG, "started demoactivity");
+
+		onStartUp();
+		final SharedPreferences preferences = getApplicationContext()
+				.getSharedPreferences("Lost",
+						android.content.Context.MODE_PRIVATE);
+		// Service preferences listener
+		associationStatus
+				.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+
+					@Override
+					public void onCheckedChanged(RadioGroup group, int checkedId) {
+						if (R.id.manual == checkedId) {
+							associationState = MANUAL;
+						} else {
+							associationState = POP_UP;
+						}
+
+						SharedPreferences.Editor editor = preferences.edit();
+						editor.putInt("associationState", associationState);
+						editor.commit();
+						RequestServer.savePreferences(associationState,
+								allowStorage, regid);
+
+					}
+				});
+
+	}
+
+	private void onStartUp() {
 		context = getApplicationContext();
 		setContentView(R.layout.service_main);
 		associate = (Button) findViewById(R.id.associate);
@@ -118,7 +151,7 @@ public class DemoActivity extends Activity {
 		final SharedPreferences prefs = getSharedPreferences(
 				DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
 		regid = prefs.getString(SplashScreen.PROPERTY_REG_ID, "");
-		
+
 		if (!((LocationManager) context
 				.getSystemService(Context.LOCATION_SERVICE))
 				.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -129,8 +162,9 @@ public class DemoActivity extends Activity {
 
 		// Check if the service is stopping and blocks interface
 		if (LOSTService.toStop) {
-			test.setText("Waiting for internet connection to sync files");
-			associate.setEnabled(false);
+			test.setText(R.string.syncService);
+			test.setVisibility(View.VISIBLE);
+			associate.setVisibility(View.GONE);
 			associationStatus.setEnabled(false);
 			((RadioButton) findViewById(R.id.manual)).setEnabled(false);
 			((RadioButton) findViewById(R.id.pop)).setEnabled(false);
@@ -141,7 +175,8 @@ public class DemoActivity extends Activity {
 
 		// Check service state and changes the button text
 		if (LOSTService.serviceActive) {
-			serviceActivate.setText("Stop Service");
+			onServiceRunning();
+			return;
 		}
 
 		// checks if there is internet connection
@@ -189,38 +224,15 @@ public class DemoActivity extends Activity {
 
 			setAssociationStatus(idRadioButton);
 
-			// Service preferences listener
-			associationStatus
-					.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-
-						@Override
-						public void onCheckedChanged(RadioGroup group,
-								int checkedId) {
-							if (R.id.manual == checkedId) {
-								associationState = MANUAL;
-							} else {
-								associationState = POP_UP;
-							}
-
-							SharedPreferences.Editor editor = preferences
-									.edit();
-							editor.putInt("associationState", associationState);
-							editor.commit();
-							RequestServer.savePreferences(associationState,
-									allowStorage, regid);
-
-						}
-					});
-
 			// registers user for simulation if intent equals
 			// "registerParticipant"
-			Intent intent = getIntent();
-			String action = intent.getAction();
-			if (action != null && action.equals("registerParticipant")) {
-				RequestServer.registerForSimulation(
-						intent.getStringExtra("name"), regid, address);
-				Log.d("debugg", "Register for simulation 0");
-			}
+			/*
+			 * Intent intent = getIntent(); String action = intent.getAction();
+			 * if (action != null && action.equals("registerParticipant")) {
+			 * RequestServer.registerForSimulation(
+			 * intent.getStringExtra("name"), regid, address); Log.d("debugg",
+			 * "Register for simulation 0"); }
+			 */
 
 			// populates the active simulations window
 			getActiveSimulations();
@@ -248,88 +260,69 @@ public class DemoActivity extends Activity {
 		rt.toggle();
 	}
 
+	private boolean checkAssociationLocal() {
+
+		String URL = "content://find.service.net.diogomarques.wifioppish.MessagesProvider/simulation";
+		Uri uri = Uri.parse(URL);
+		Cursor c = getContentResolver().query(uri, null, "", null, "");
+
+		if (c.moveToFirst()) {
+			do {
+				if (c.getString(c.getColumnIndex("simukey")).equals(
+						"simulation")) {
+					registeredSimulation = c.getString(c
+							.getColumnIndex("simuvalue"));
+					date = c.getString(c.getColumnIndex("simudate"));
+					duration = c.getString(c.getColumnIndex("simuduration"));
+					location = c.getString(c.getColumnIndex("simulocal"));
+
+				}
+			} while (c.moveToNext());
+		}
+		c.close();
+
+		if (registeredSimulation != null && registeredSimulation.length() > 0) {
+			ui.post(new Runnable() {
+				public void run() {
+					Log.d("gcm", "Associado a " + registeredSimulation);
+					test.setText(registeredSimulation + ", " + location
+							+ " at " + date + " for " + duration + "min");
+					test.setVisibility(View.VISIBLE);
+					associate.setText(R.string.disassociate);
+					associate.setEnabled(true);
+					state_associated = true;
+				}
+			});
+			return true;
+		} else {
+			if (activeSimulations.length > 0)
+				ui.post(new Runnable() {
+					public void run() {
+						associate.setEnabled(true);
+						associate.setText(R.string.associate);
+					}
+				});
+			return false;
+		}
+		// Log.d(TAG, "simu value:" + registeredSimulation + " " + date + " " +
+		// duration
+		// + " " + location);
+	}
+
 	/**
 	 * Check if there the user is associated with a simulation
 	 */
 	private void checkAssociation() {
-		new AsyncTask<Void, Void, String>() {
-			@Override
-			protected String doInBackground(Void... params) {
-				if (activeSimulations.length == 0) {
-					ui.post(new Runnable() {
-						public void run() {
-							test.setText("No simulations available");
-							associate.setEnabled(false);
-							state_associated = false;
-						}
-					});
-					return "";
-				}
-
-				StringBuilder builder = new StringBuilder();
-				HttpClient client = new DefaultHttpClient();
-				HttpGet httpGet;
-
-				httpGet = new HttpGet(
-						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations/user/"
-								+ regid);
-
-				try {
-					HttpResponse response = client.execute(httpGet);
-					StatusLine statusLine = response.getStatusLine();
-					int statusCode = statusLine.getStatusCode();
-					if (statusCode == 200) {
-						HttpEntity entity = response.getEntity();
-						InputStream content = entity.getContent();
-						BufferedReader reader = new BufferedReader(
-								new InputStreamReader(content));
-						String line;
-						while ((line = reader.readLine()) != null) {
-							builder.append(line);
-						}
-					} else {
-						// Log.e(ParseJSON.class.toString(),
-						// "Failed to download file");
+		if (!checkAssociationLocal()) {
+			if (activeSimulations.length == 0) {
+				ui.post(new Runnable() {
+					public void run() {
+						test.setText(R.string.noSimulations);
+						state_associated = false;
 					}
-				} catch (ClientProtocolException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-				String simulations = builder.toString();
-				JSONArray jsonArray = new JSONArray(simulations);
-				if (jsonArray.length() > 0) {
-					JSONObject jsonObject = jsonArray.getJSONObject(0);
-					registeredSimulation = jsonObject.getString("name");
-					location = jsonObject.getString("location");
-					date = jsonObject.getString("start_date");
-					duration = jsonObject.getString("duration_m");
-
-					// simulation value in the content provider
-					Simulation.regSimulationContentProvider(
-							registeredSimulation, context);
-
-					if (registeredSimulation != null
-							&& registeredSimulation.length() > 0) {
-
-						ui.post(new Runnable() {
-							public void run() {
-								Log.d("gcm", "Associado a"
-										+ registeredSimulation);
-								test.setText(registeredSimulation + ", "
-										+ location + " at " + date + " for "
-										+ duration + "min");
-								associate
-										.setText("Disassociate from Simulation");
-								state_associated = true;
-							}
-						});
-					}
-				}
-				return simulations;
+				});
 			}
-		}.execute(null, null, null);
+		}
 
 	}
 
@@ -399,7 +392,8 @@ public class DemoActivity extends Activity {
 			Intent svcIntent = new Intent(
 					"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
 			context.startService(svcIntent);
-			serviceActivate.setText("Stop Service");
+			onServiceRunning();
+
 		}
 	}
 
@@ -415,7 +409,15 @@ public class DemoActivity extends Activity {
 		((RadioButton) findViewById(R.id.manual)).setEnabled(false);
 		((RadioButton) findViewById(R.id.pop)).setEnabled(false);
 		serviceActivate.setEnabled(false);
-		Simulation.regSimulationContentProvider("", context);
+
+		// if the starting date of the current association is in less than 3
+		// minutes and we stop the service we unregister
+		// todo verify date
+
+		if (date == null
+				|| DateFunctions.timeToDate(date.replace("-", "/")) < DISASSOCIATE_THRESHOLD) {
+			Simulation.regSimulationContentProvider("", "", "", "", context);
+		}
 		LOSTService.stop(context);
 
 	}
@@ -430,7 +432,6 @@ public class DemoActivity extends Activity {
 			disassociate();
 			return;
 		}
-		state_associated = true;
 		AlertDialog.Builder alertDialog = new AlertDialog.Builder(
 				DemoActivity.this);
 		LayoutInflater inflater = getLayoutInflater();
@@ -460,22 +461,26 @@ public class DemoActivity extends Activity {
 				view.invalidate();
 				AlertDialog.Builder alert = new AlertDialog.Builder(
 						DemoActivity.this);
+				state_associated = true;
 
 				RequestServer.registerForSimulation(
 						activeSimulations[position].getName(), regid, address);
 
 				registeredSimulation = activeSimulations[p].getName();
+				date = activeSimulations[p].date;
+				duration = activeSimulations[p].duration;
+				location = activeSimulations[p].location;
 				Simulation.regSimulationContentProvider(registeredSimulation,
-						context);
+						date, duration, location, context);
 				final String start_date = activeSimulations[position].date;
 
 				ui.post(new Runnable() {
 					public void run() {
 						Log.d("debugg", "associate to" + registeredSimulation);
-						ScheduleService.setAlarm(start_date, context);
+						ScheduleService.setStartAlarm(start_date, context);
 						test.setText(activeSimulations[p].toString());
-						associate.setText("Disassociate from Simulation");
-
+						test.setVisibility(View.VISIBLE);
+						associate.setText(R.string.disassociate);
 						al.cancel();
 						activeSimulations[p].activate(context);
 
@@ -490,53 +495,27 @@ public class DemoActivity extends Activity {
 	 * Dissassociate from the current simulation/alert
 	 */
 	public void disassociate() {
-		new AsyncTask<Void, Void, String>() {
-			@Override
-			protected String doInBackground(Void... params) {
-				HttpClient client = new DefaultHttpClient();
-				HttpGet httpGet;
+		Simulation.regSimulationContentProvider("", "", "", "", context);
 
-				httpGet = new HttpGet(
-						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations/unregister/"
-								+ address);
-
-				try {
-					HttpResponse response = client.execute(httpGet);
-					StatusLine statusLine = response.getStatusLine();
-					int statusCode = statusLine.getStatusCode();
-					if (statusCode == 200) {
-						registeredSimulation = "";
-						Simulation.regSimulationContentProvider(
-								registeredSimulation, context);
-
-						ui.post(new Runnable() {
-							public void run() {
-								// Log.d("gcm", registeredSimulation);
-								test.setText("No simulation associated");
-								associate.setText("Associate to Simulation");
-								ScheduleService.cancelAlarm(context);
-							}
-						});
-					} else {
-						// Log.e(ParseJSON.class.toString(),
-						// "Failed to download file");
-					}
-				} catch (ClientProtocolException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				state_associated = false;
-				return "";
+		ui.post(new Runnable() {
+			public void run() {
+				// Log.d("gcm", registeredSimulation);
+				test.setVisibility(View.GONE);
+				associate.setText(R.string.associate);
+				ScheduleService.cancelAlarm(context);
 			}
-		}.execute(null, null, null);
+		});
+		state_associated = false;
+
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
+		Log.d(TAG, "resumed");
+		onStartUp();
 		// Check device for Play Services APK.
-		checkPlayServices();
+		// checkPlayServices();
 	}
 
 	/**
@@ -578,8 +557,7 @@ public class DemoActivity extends Activity {
 					public void onClick(DialogInterface dialog, int id) {
 						Intent callGPSSettingIntent = new Intent(
 								android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-						startActivity(
-								callGPSSettingIntent);
+						startActivity(callGPSSettingIntent);
 					}
 				});
 		// alertDialogBuilder.setNegativeButton("Cancel",
@@ -590,6 +568,16 @@ public class DemoActivity extends Activity {
 		// });
 		AlertDialog alert = alertDialogBuilder.create();
 		alert.show();
+	}
+
+	private void onServiceRunning() {
+		serviceActivate.setText("Stop Service");
+		test.setText("Service running");
+		test.setVisibility(View.VISIBLE);
+		associate.setEnabled(false);
+		associationStatus.setEnabled(false);
+		((RadioButton) findViewById(R.id.manual)).setEnabled(false);
+		((RadioButton) findViewById(R.id.pop)).setEnabled(false);
 	}
 
 }

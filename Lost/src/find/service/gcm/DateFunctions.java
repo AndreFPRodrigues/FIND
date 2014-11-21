@@ -11,7 +11,7 @@ import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 
-public class DateFunctions {
+public class DateFunctions { 
 	private final static String TAG="GCM";
 
 	/**
@@ -42,6 +42,8 @@ public class DateFunctions {
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			Log.d(TAG, " 22 "+dtStart );
+
 		}
 		return 0;
 	}
