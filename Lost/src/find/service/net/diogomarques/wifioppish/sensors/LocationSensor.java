@@ -1,9 +1,5 @@
 package find.service.net.diogomarques.wifioppish.sensors;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import android.content.Context;
 import android.location.Location;
 import android.location.LocationListener;
@@ -24,40 +20,22 @@ import android.util.Log;
 public class LocationSensor extends AbstractSensor {
 
 	private static final String TAG = "LocationSensor";
-	private static final int CONFIDENCE_INTERVAL = 5;	 // in seconds
+
+	// location providers will only send updates when the location has changed
+	// by at least DISTANCE meters, AND at least X_UPDATE_INTERVAL milliseconds
+	// have passed
 	private static final int GPS_UPDATE_INTERVAL = 3 * 60 * 1000; // 3 minutes
-	private static final int WIFI_UPDATE_INTERVAL = 1 * 60 * 1000; // 1 minute
+	private static final int WIFI_UPDATE_INTERVAL = 2 * 60 * 1000; // 2 minutes
+	private static final int DISTANCE = 5; // meters
+
 	private Context context;
 	private LocationManager mLocManager;
-	private long lastUpdate;
-	private ScheduledExecutorService schedulerConf;
-	private boolean gpsConnected;
 
 	// data
-	private double latitude, longitude;
-	private int confidence;
+	private Location currentLocation;
+	private int accuracy;
 
-	/**
-	 * Mediocre confidence level for location update, meaning that the location
-	 * refers to the previously successfully retrieved location
-	 */
-	public static final int CONFIDENCE_LAST_KNOWN = 0;
-
-	/**
-	 * Reasonable confidence level, tipically associated with coordinates
-	 * exchanged by peers geographicaly near the victim.
-	 * <p>
-	 * Reserved for future use.
-	 */
-	public static final int CONFIDENCE_APPROXIMATE = 5;
-
-	/**
-	 * Maximum confidence level for location update, meaning that the location
-	 * was just retrieved from GPS
-	 */
-	public static final int CONFIDENCE_UPDATED = 10;
-
-	private LocationListener GPSlocationListener = new LocationListener() {
+	private LocationListener locationListener = new LocationListener() {
 
 		@Override
 		public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -76,46 +54,10 @@ public class LocationSensor extends AbstractSensor {
 
 		@Override
 		public void onLocationChanged(Location location) {
-			Log.i(TAG, "Location Changed. Updated by GPS provider.");
-			lastUpdate = System.currentTimeMillis();
-
-			latitude = location.getLatitude();
-			longitude = location.getLongitude();
-			confidence = CONFIDENCE_UPDATED;
-
-			if (schedulerConf.isShutdown())
-				initializeScheduler();
-		}
-	};
-	
-	private LocationListener wifiLocationListener = new LocationListener() {
-
-		@Override
-		public void onStatusChanged(String provider, int status, Bundle extras) {
-			Log.i(TAG, "Status change: #status=" + status + " for " + provider);
-		}
-
-		@Override
-		public void onProviderEnabled(String provider) {
-			Log.i(TAG, "Provider enabled: " + provider);
-		}
-
-		@Override
-		public void onProviderDisabled(String provider) {
-			Log.i(TAG, "Provider disabled: " + provider);
-		}
-
-		@Override
-		public void onLocationChanged(Location location) {
-			Log.i(TAG, "Location Changed. Updated by Network provider.");
-			lastUpdate = System.currentTimeMillis();
-
-			latitude = location.getLatitude();
-			longitude = location.getLongitude();
-			confidence = CONFIDENCE_APPROXIMATE;
-
-//			if (schedulerConf.isShutdown())
-//				initializeScheduler();
+			Log.i(TAG, "Location Changed. Updated by " + location.getProvider()
+					+ " provider.");
+			
+			updateLocation(location);
 		}
 	};
 
@@ -127,26 +69,27 @@ public class LocationSensor extends AbstractSensor {
 	 */
 	public LocationSensor(Context c) {
 		super(c);
+		currentLocation = new Location("");
+		currentLocation.setAccuracy(10000000);
 		context = c;
-		confidence = CONFIDENCE_LAST_KNOWN;
-		gpsConnected = false;
-		schedulerConf = Executors.newSingleThreadScheduledExecutor();
 	}
 
 	@Override
 	public void startSensor() {
-		registerLocationListeners(GPSlocationListener, wifiLocationListener);
+		registerLocationListeners(locationListener);
 	}
 
 	@Override
 	public Object getCurrentValue() {
-		return new double[] { latitude, longitude, confidence };
+		double lat = currentLocation.getLatitude();
+		double lon = currentLocation.getLongitude();
+
+		return new double[] { lat, lon, 10 };
 	}
 
 	@Override
 	public void stopSensor() {
-		schedulerConf.shutdown();
-		unregisterLocationListener(GPSlocationListener, wifiLocationListener);
+		unregisterLocationListener(locationListener);
 	}
 
 	/**
@@ -155,21 +98,19 @@ public class LocationSensor extends AbstractSensor {
 	 * @param mLocListener
 	 *            location listener to receive coordinate updates
 	 */
-	private void registerLocationListeners(LocationListener GPSLocListener,
-			LocationListener wifiLocListener) {
-		Log.d(TAG, "registerLocationListener method");
+	private void registerLocationListeners(LocationListener locListener) {
 		context.hashCode();
 
 		if (mLocManager == null)
 			mLocManager = (LocationManager) context
 					.getSystemService(Context.LOCATION_SERVICE);
 
-		unregisterLocationListener(GPSLocListener, wifiLocListener);
-		
+		unregisterLocationListener(locListener);
+
 		mLocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-				GPS_UPDATE_INTERVAL, 0, GPSLocListener);
+				GPS_UPDATE_INTERVAL, DISTANCE, locListener);
 		mLocManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-				WIFI_UPDATE_INTERVAL, 0, wifiLocListener);
+				WIFI_UPDATE_INTERVAL, DISTANCE, locListener);
 	}
 
 	/**
@@ -179,40 +120,44 @@ public class LocationSensor extends AbstractSensor {
 	 *            location listener to remove
 	 */
 	private void unregisterLocationListener(
-			LocationListener GPSLocationListener,
-			LocationListener wifiLocationListener) {
-		
-		if (mLocManager != null){
-			mLocManager.removeUpdates(GPSLocationListener);
-			mLocManager.removeUpdates(wifiLocationListener);
+			LocationListener locListener) {
+
+		if (mLocManager != null)
+			mLocManager.removeUpdates(locListener);
+	}
+
+	public void updateLocation(Location newLocation) {
+		if (isBetterLocation(newLocation, currentLocation)) {
+			currentLocation = newLocation;
+			Log.d(TAG, "Current best location updated!");
 		}
 	}
 
 	/**
-	 * Initializes the scheduler to check for valid locations and update
-	 * location confidence level
+	 * Determines whether one Location reading is better than the current
+	 * Location fix
+	 * 
+	 * @param location
+	 *            The new Location that you want to evaluate
+	 * @param currentBestLocation
+	 *            The current Location fix, to which you want to compare the new
+	 *            one
 	 */
-	private void initializeScheduler() {
-		schedulerConf.scheduleAtFixedRate(new Runnable() {
+	private boolean isBetterLocation(Location newLocation,
+			Location currentBestLocation) {
 
-			@Override
-			public void run() {
-				if ((lastUpdate + CONFIDENCE_INTERVAL * 1000) < System
-						.currentTimeMillis()) {
-					confidence = CONFIDENCE_LAST_KNOWN;
-					if (gpsConnected) {
-						Log.i(TAG, "No coordinates in the last "
-								+ CONFIDENCE_INTERVAL + " seconds, confidence="
-								+ confidence);
-						gpsConnected = false;
-					}
-				} else if (!gpsConnected) {
-					Log.i(TAG, "Receiving coordinates, confidence="
-							+ confidence);
-					gpsConnected = true;
-				}
-			}
-		}, 0, CONFIDENCE_INTERVAL, TimeUnit.SECONDS);
+		// Check whether the new location fix is more or less accurate
+		int accuracyDelta = (int) (newLocation.getAccuracy() - (currentBestLocation
+				.getAccuracy() + accuracy));
+		boolean isMoreAccurate = accuracyDelta < 0;
+
+		// Determine location quality using its accuracy
+		if (isMoreAccurate)
+			accuracy = DISTANCE;
+		else
+			accuracy += DISTANCE;
+
+		return isMoreAccurate;
 	}
 
 }
