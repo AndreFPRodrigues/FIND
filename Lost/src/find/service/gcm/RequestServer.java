@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -43,7 +44,8 @@ import android.util.Log;
 public class RequestServer {
 
 	private static String postCoordinates = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims";
-	private static String TAG ="gcm";
+	private static String TAG = "gcm";
+
 	/**
 	 * Check if there is wifi connection
 	 * 
@@ -58,13 +60,18 @@ public class RequestServer {
 
 			if (mWifi != null && mWifi.isConnectedOrConnecting()) {
 				return true;
+
 			} else {
 				return false;
 			}
 		} catch (Exception e) {
+			e.printStackTrace();
+
 			return false;
 		}
 	}
+
+
 
 	// Register the gcm user
 	public static String post(String endpoint, Map<String, String> params)
@@ -117,13 +124,13 @@ public class RequestServer {
 			String line = null;
 			// Read Server Response
 			while ((line = reader.readLine()) != null) {
-				// Append server response in string 
+				// Append server response in string
 				sb.append(line + "\n");
 			}
 			reader.close();
 		} catch (Exception ex) {
-			ex.printStackTrace(); 
-		} finally { 
+			ex.printStackTrace();
+		} finally {
 			if (conn != null) {
 				conn.disconnect();
 				return sb.toString();
@@ -133,7 +140,8 @@ public class RequestServer {
 	}
 
 	// Register this account with the server.
-	public static void register(final String mac, final String regId, final String email) {
+	public static void register(final String mac, final String regId,
+			final String email) {
 
 		new AsyncTask<Void, Void, String>() {
 			@Override
@@ -143,7 +151,7 @@ public class RequestServer {
 				Map<String, String> params = new HashMap<String, String>();
 				params.put("regId", regId);
 				params.put("mac", mac);
-				params.put("email", email); 
+				params.put("email", email);
 				// Post registration values to web server
 				try {
 					RequestServer.post(serverUrl, params);
@@ -221,16 +229,16 @@ public class RequestServer {
 				httpPost = new HttpPost(
 						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations");
 
-				try { 
+				try {
 					List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(
 							3);
 					nameValuePairs.add(new BasicNameValuePair("name", name));
 					nameValuePairs.add(new BasicNameValuePair("regid", regid));
 					nameValuePairs.add(new BasicNameValuePair("mac_address",
 							address));
-					
-					Log.d(TAG, "Associating: "+ name + " " + regid+ " "+ address);
 
+					Log.d(TAG, "Associating: " + name + " " + regid + " "
+							+ address);
 
 					httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
@@ -247,7 +255,7 @@ public class RequestServer {
 						while ((line = reader.readLine()) != null) {
 							builder.append(line);
 						}
-						 Log.d("gcm", "response " + builder.toString());
+						Log.d("gcm", "response " + builder.toString());
 					} else {
 						// Log.e(ParseJSON.class.toString(),
 						// "Failed to download file");
@@ -312,7 +320,7 @@ public class RequestServer {
 		}.execute(null, null, null);
 
 	}
-	
+
 	protected static void deletePoints(final String regid) {
 		new AsyncTask<Void, Void, String>() {
 			@Override

@@ -58,7 +58,6 @@ public class StateInternetConn extends AState {
 		context = c;
 		environment.deliverMessage("entered Internet connected state");
 
-		boolean timePassed = false;
 		long startTime = new Date().getTime();
 
 		try {
@@ -66,7 +65,9 @@ public class StateInternetConn extends AState {
 			endpoint = new StringBuilder()
 					.append(environment.getPreferences().getApiEndpoint())
 					.append('/').append(METHOD).toString();
-
+			if(LOSTService.toStop){
+				endpoint+="/legacy";
+			}
 			Log.d("Webservice", "Endpoint: " + endpoint);
 
 			HttpClient httpclient = new DefaultHttpClient();

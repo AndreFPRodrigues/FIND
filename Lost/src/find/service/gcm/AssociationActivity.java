@@ -22,13 +22,13 @@ public class AssociationActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		c = this;
 		Intent intent = getIntent();
-		if (intent!=null && intent.getAction()!=null && intent.getAction().equals("disassociate")) {
+		if (intent != null && intent.getAction() != null
+				&& intent.getAction().equals("disassociate")) {
 			ScheduleService.cancelAlarm(this);
-			Simulation.regSimulationContentProvider("", "", "",
-					"", this);
+			Simulation.regSimulationContentProvider("", "", "", "", this);
 			Log.d(TAG, "canceling alarm via notification");
 			finish();
-			return;
+			return; 
 		}
 
 		final String name = intent.getExtras().getString("name");
@@ -40,27 +40,20 @@ public class AssociationActivity extends Activity {
 		final double lonS = intent.getExtras().getDouble("lonS");
 		final double latE = intent.getExtras().getDouble("latE");
 		final double lonE = intent.getExtras().getDouble("lonE");
-
-		// set timer for retriving location
-		/*
-		 * long timeleft = DateFunctions.timeToDate(date); long handlerTimer =
-		 * timeleft - threshold; if (handlerTimer < 0) handlerTimer = 0; else {
-		 * if (handlerTimer > threshold) handlerTimer = threshold; }
-		 */
-
-		// Log.d(TAG, "pop up timer:" + handlerTimer);
+		
 		Simulation.preDownloadTiles(latS, lonS, latE, lonE, c);
-		ScheduleService.setStartAlarm(date, c);
-		Intent disassociate = new Intent(this,
-				AssociationActivity.class);
+		ScheduleService.setStartAlarm(date,duration, c);
+		Intent disassociate = new Intent(this, AssociationActivity.class);
 		disassociate.setAction("disassociate");
-		Notifications.generateNotification(c, "Associate to "
-				+ name , "Click to disassociate.",disassociate );
+		Notifications.generateNotification(c, "Associate to " + name,
+				"Click to disassociate.", disassociate);
 		Simulation.regSimulationContentProvider(name, date, duration, location,
 				c);
 		
-		finish();	
-	
+		Intent openMainActivity= new Intent(AssociationActivity.this, DemoActivity.class);
+        openMainActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        startActivity(openMainActivity);
+		finish();
 
 	}
 

@@ -76,7 +76,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	double lonE;
 	Intent intent;
 
-	private boolean debug = true;
 	private LocationSensor ls;
 
 	@Override
@@ -93,6 +92,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			return;
 		}*/
 
+		/*
 		// get data from push notification
 		type = intent.getExtras().getString("type");
 		Log.d(TAG, "Type:" + type);
@@ -113,7 +113,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		} catch (NumberFormatException e) {
 			Log.d(TAG, "Converted type is not a number");
 
-		}
+		}*/
 
 		Log.d(TAG, "Checking received new notification");
 		// received new simulation notification, getting parameters
@@ -135,11 +135,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 		// retrieving last best location
 
-		Notifications.generateNotification(c, "Alert", "Retrieving location!", null);
-		if (debug) {
-			startPopUp(null);
-			return;
-		}
+
 		Location l = LocationFunctions.getBestLocation(context);
 		if (l == null || LocationFunctions.oldLocation(l)) {
 			Log.d(TAG, "old or null location");

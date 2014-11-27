@@ -3,6 +3,9 @@ package find.service.net.diogomarques.wifioppish;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Date;
 
 import find.service.net.diogomarques.wifioppish.networking.Message;
@@ -33,7 +36,8 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 	private final SoftAPDelegate mSoftAP;
 	private final WiFiDelegate mWiFi;
 	private final UDPDelegate mUdp;
-
+	
+	private final String TAG="LOSTService";
 	/**
 	 * Static factory that creates instances of networking controllers.
 	 * 
@@ -146,14 +150,13 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 			while (true) {
 				if (new Date().getTime() > tick + mEnvironment.getPreferences().getScanPeriod()) {
 					if(isNetworkAvailable()){
-						//Log.w("TextLog", "network available");
-						String pings = ping("www.google.pt");
-						//Log.w("TextLog", "ping: " + pings);
-
-						if(pings.contains("1 received")){
-							//Log.w("TextLog", " Connected internet");
+						if(ping()){
+							Log.w(TAG, " Connected internet");
 							connected=true;
 							listener.onInternetConnection();
+						}else{
+							Log.w(TAG, " Ping failed");
+
 						}
 					}
 
@@ -181,30 +184,24 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 	 * @param url Hostname to ping
 	 * @return Ping command output
 	 */
-	private String ping(String url) {
-
-		//int count = 0;
-		String str = ""; 
+	private  boolean ping() {
+		
 		try {
-			Process process = Runtime.getRuntime().exec(
-					"/system/bin/ping -c 1 " + url);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(
-					process.getInputStream()));
-			int i;
-			char[] buffer = new char[4096];
-			StringBuffer output = new StringBuffer();
-			while ((i = reader.read(buffer)) > 0)
-				output.append(buffer, 0, i);
-			reader.close();
+			URL url = new URL("http://www.google.com");
+			HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
+			urlc.setConnectTimeout(0);
+			urlc.connect();
 
-			// body.append(output.toString()+"\n");
-			str = output.toString();
-			// Log.d(TAG, str);
+			if (urlc.getResponseCode() == 200) {
+				return new Boolean(true);
+			}
+
+		} catch (MalformedURLException e1) {
+			e1.printStackTrace();
 		} catch (IOException e) {
-			// body.append("Error\n");
 			e.printStackTrace();
 		}
-		return str;
+		return false;
 	}
 
 }

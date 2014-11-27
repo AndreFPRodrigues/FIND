@@ -62,6 +62,7 @@ public class LOSTService extends Service {
 	public static boolean serviceActive = false;
 	public static boolean toStop = false;
 	public static boolean synced = false;
+	private static boolean isLogging=false;
 
 	@Override
 	public void onCreate() {
@@ -89,7 +90,8 @@ public class LOSTService extends Service {
 
 		if (!toStop) {
 			LOSTService.toStop = true;
-			saveLogCat();
+			Log.d(TAG, "Syncing service");
+			// saveLogCat("stop");
 
 			if (environment != null) {
 				environment.stopStateLoop();
@@ -100,8 +102,9 @@ public class LOSTService extends Service {
 			ContentValues cv = new ContentValues();
 			cv.put(MessagesProvider.COL_STATUSKEY, "service");
 			cv.put(MessagesProvider.COL_STATUSVALUE, "Stopping");
-			context.getContentResolver().insert(MessagesProvider.URI_STATUS, cv);
-			
+			context.getContentResolver()
+					.insert(MessagesProvider.URI_STATUS, cv);
+
 			Intent intent = new Intent(context, LOSTService.class);
 			PendingIntent pintent = PendingIntent.getService(context, 0,
 					intent, 0);
@@ -122,13 +125,12 @@ public class LOSTService extends Service {
 		Intent svcIntent = new Intent(
 				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
 
-		//context.deleteDatabase("LOSTMessages");
+		// context.deleteDatabase("LOSTMessages");
 		ContentResolver cr = environment.getAndroidContext()
 				.getContentResolver();
-		cr.query(Uri
-				.parse("content://find.service.net.diogomarques.wifioppish.MessagesProvider/customsend"),
-				null, "", null, "");
-
+		cr.delete(
+				Uri.parse("content://find.service.net.diogomarques.wifioppish.MessagesProvider/truncate"),
+				"", null);
 
 		ContentValues cv = new ContentValues();
 		cv.put(MessagesProvider.COL_STATUSKEY, "service");
@@ -136,6 +138,8 @@ public class LOSTService extends Service {
 		context.getContentResolver().insert(MessagesProvider.URI_STATUS, cv);
 
 		context.stopService(svcIntent);
+
+		Log.d(TAG, "Correctly synced and terminated service");
 		System.exit(0);
 
 	}
@@ -173,6 +177,7 @@ public class LOSTService extends Service {
 		if (environment == null) {
 			Log.i(TAG, "Creating new instance");
 			serviceActive = true;
+			LOSTService.saveLogCat("service start");
 
 			// populate default preferences that may be missing
 			PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
@@ -244,19 +249,27 @@ public class LOSTService extends Service {
 		return note;
 	}
 
-	private static void saveLogCat() {
-		String filePath = Environment.getExternalStorageDirectory() + "/logcat";
+	public static void saveLogCat(String from) {
+		if (!isLogging) {
+			isLogging = true;
 
-		try {
+			Log.d("logcat",
+					"-------------------Logging----------------------------"
+							+ from);
+			String filePath = Environment.getExternalStorageDirectory()
+					+ "/logcat";
 
-			Runtime.getRuntime().exec(
-					new String[] { "logcat", "-f", filePath + "_FIND.txt",
-							"-v", "time", "dalvikvm:S *:V" });
-			Runtime.getRuntime().exec(new String[] { "logcat", "-c" });
+			try {
 
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+				Runtime.getRuntime().exec(
+						new String[] { "logcat", "-f", filePath + "_FIND.txt",
+								"-v", "time", "dalvikvm:S *:V" });
+				Runtime.getRuntime().exec(new String[] { "logcat", "-c" });
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 

@@ -110,9 +110,24 @@ public class DemoActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		Log.d(TAG, "started demoactivity");
+		LOSTService.saveLogCat("create");
 
-		onStartUp();
+		Log.d(TAG, "started demoactivity");
+		
+		context = getApplicationContext();
+		setContentView(R.layout.service_main);
+		associate = (Button) findViewById(R.id.associate);
+		associationStatus = (RadioGroup) findViewById(R.id.radioGroup1);
+		state_associated = false;
+		test = (TextView) findViewById(R.id.with);
+		serviceActivate = (Button) findViewById(R.id.sservice);
+		indexSimu = -1;
+		final SharedPreferences prefs = getSharedPreferences(
+				DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
+		regid = prefs.getString(SplashScreen.PROPERTY_REG_ID, "");
+		
+		//onStartUp();
+		
 		final SharedPreferences preferences = getApplicationContext()
 				.getSharedPreferences("Lost",
 						android.content.Context.MODE_PRIVATE);
@@ -138,20 +153,16 @@ public class DemoActivity extends Activity {
 				});
 
 	}
-
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		Log.d(TAG, "resumed");
+		onStartUp();
+	}
+	
 	private void onStartUp() {
-		context = getApplicationContext();
-		setContentView(R.layout.service_main);
-		associate = (Button) findViewById(R.id.associate);
-		associationStatus = (RadioGroup) findViewById(R.id.radioGroup1);
-		state_associated = false;
-		test = (TextView) findViewById(R.id.with);
-		serviceActivate = (Button) findViewById(R.id.sservice);
-		indexSimu = -1;
-		final SharedPreferences prefs = getSharedPreferences(
-				DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
-		regid = prefs.getString(SplashScreen.PROPERTY_REG_ID, "");
-
+		//check the dps permissions
 		if (!((LocationManager) context
 				.getSystemService(Context.LOCATION_SERVICE))
 				.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -353,9 +364,21 @@ public class DemoActivity extends Activity {
 						while ((line = reader.readLine()) != null) {
 							builder.append(line);
 						}
+
+						String simulations = builder.toString();
+						Log.d(TAG, "active simulations json: " + simulations);
+
+						JSONArray jsonArray = new JSONArray(simulations);
+
+						activeSimulations = new Simulation[jsonArray.length()];
+						for (int i = 0; i < jsonArray.length(); i++) {
+							JSONObject jsonObject = jsonArray.getJSONObject(i);
+							activeSimulations[i] = new Simulation(jsonObject);
+						}
+
+						checkAssociation();
 					} else {
-						// Log.e(ParseJSON.class.toString(),
-						// "Failed to download file");
+						Log.e(TAG, "Failed to download file");
 					}
 				} catch (ClientProtocolException e) {
 					e.printStackTrace();
@@ -363,18 +386,7 @@ public class DemoActivity extends Activity {
 					e.printStackTrace();
 				}
 
-				String simulations = builder.toString();
-				JSONArray jsonArray = new JSONArray(simulations);
-
-				activeSimulations = new Simulation[jsonArray.length()];
-				for (int i = 0; i < jsonArray.length(); i++) {
-					JSONObject jsonObject = jsonArray.getJSONObject(i);
-					activeSimulations[i] = new Simulation(jsonObject);
-				}
-
-				checkAssociation();
-
-				return simulations;
+				return null;
 			}
 		}.execute(null, null, null);
 
@@ -472,12 +484,14 @@ public class DemoActivity extends Activity {
 				location = activeSimulations[p].location;
 				Simulation.regSimulationContentProvider(registeredSimulation,
 						date, duration, location, context);
-				final String start_date = activeSimulations[position].date;
+				final String _start_date = activeSimulations[position].date;
+				final String _duration = activeSimulations[position].date;
 
 				ui.post(new Runnable() {
 					public void run() {
 						Log.d("debugg", "associate to" + registeredSimulation);
-						ScheduleService.setStartAlarm(start_date, context);
+						ScheduleService.setStartAlarm(_start_date, _duration,
+								context);
 						test.setText(activeSimulations[p].toString());
 						test.setVisibility(View.VISIBLE);
 						associate.setText(R.string.disassociate);
@@ -509,14 +523,7 @@ public class DemoActivity extends Activity {
 
 	}
 
-	@Override
-	protected void onResume() {
-		super.onResume();
-		Log.d(TAG, "resumed");
-		onStartUp();
-		// Check device for Play Services APK.
-		// checkPlayServices();
-	}
+
 
 	/**
 	 * Check the device to make sure it has the Google Play Services APK. If it

@@ -2,6 +2,7 @@ package find.service.gcm;
 
 import java.util.GregorianCalendar;
 import find.service.net.diogomarques.wifioppish.sensors.LocationSensor;
+import find.service.net.diogomarques.wifioppish.service.LOSTService;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -19,17 +20,40 @@ public class ScheduleService extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		c= context;
-		if (intent.getAction().equals("startAlarm")) {
-			handleAlarm();
+		Log.d(TAG, "received alarm");
+
+		String action=intent.getAction();
+		if (action.equals("startAlarm")) {
+			Log.d(TAG, "received start alarm: starting service");
+			handleStartAlarm();
+		}else{
+			if (action.equals("stopAlarm")) {
+				Log.d(TAG, "received stop alarm: stopping service");
+
+				handleStopAlarm();
+			}
+			
 		}
+		
+		Intent openMainActivity= new Intent(context, DemoActivity.class);
+        openMainActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        openMainActivity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        context.startActivity(openMainActivity);
 	}
-	
+	/**
+	 * Handles the stop service alarm
+	 */
+	private void handleStopAlarm() {
+		Simulation.regSimulationContentProvider("", "", "", "", c);
+		LOSTService.stop(c);
+	}
+
 	/**
 	 * Handles the start service alarm
 	 */
-	private void handleAlarm() {
+	private void handleStartAlarm() {
 	
-		Log.d(TAG, "received alarm intent starting service");
 
 		Intent svcIntent = new Intent(
 				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
@@ -40,7 +64,7 @@ public class ScheduleService extends BroadcastReceiver {
 						android.content.Context.MODE_PRIVATE);
 		boolean checkedLocation = preferences.getBoolean("location", false);
 		if (!checkedLocation) {
-			Log.d(TAG, "Confirm location is within bounds");
+			Log.d(TAG, "Verifiyng if location is within bounds");
 			ls = new LocationSensor(c);
 			ls.startSensor();
 			isInSimulationLocation(preferences.getFloat("latS", 0),
@@ -106,8 +130,8 @@ public class ScheduleService extends BroadcastReceiver {
 	 * Stops the service the user is not in location and deletes all points
 	 */
 	private void stop(Context c) {
-		Log.d(TAG, "Stopping service");
-		Notifications.generateNotification(c,"FIND Servoce" ,"Stopping service",null);
+		Log.d(TAG, "Manually stopping service");
+		Notifications.generateNotification(c,"FIND Service" ,"Stopping service",null);
 
 		Intent svcIntent = new Intent(
 				"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
@@ -137,15 +161,22 @@ public class ScheduleService extends BroadcastReceiver {
 	
 	
 	
-	public static void setStartAlarm(String date, Context c) {
+	public static void setStartAlarm(String date, String duration, Context c) {
 		date= date.replaceAll("-", "/");
 		long timeleft = DateFunctions.timeToDate(date);
 		if (timeleft < 0) {
 			timeleft=0;
 		
 		}
+		
+		//if the alert is a simulation it has a 
+		//duration field not null and therefor we set a stop alarm
+		if(duration!=null){
+			setStopAlarm(date, duration, c);
+		}
+		
 			Long time = new GregorianCalendar().getTimeInMillis() + timeleft;
-			Log.d(TAG, "setting alarm " + timeleft + " date:" + date);
+			Log.d(TAG, "setting start alarm " + timeleft + " date:" + date);
 			Intent intentAlarm = new Intent("startAlarm");
 			PendingIntent startPIntent = PendingIntent.getBroadcast(c, 0,
 					intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -159,16 +190,18 @@ public class ScheduleService extends BroadcastReceiver {
 			Toast.LENGTH_LONG).show();
 	}
 	
-	public static void setStopAlarm(String date,String duration,  Context c) {
+	private static void setStopAlarm(String date,String durationT,  Context c) {
 		date= date.replaceAll("-", "/");
 		long timeleft = DateFunctions.timeToDate(date);
+		long duration= Long.parseLong(durationT) *60*1000;
+		timeleft+=duration;
 		if (timeleft < 0) {
 			timeleft=0;
 		
 		}
 			Long time = new GregorianCalendar().getTimeInMillis() + timeleft;
-			Log.d(TAG, "setting alarm " + timeleft + " date:" + date);
-			Intent intentAlarm = new Intent("startAlarm");
+			Log.d(TAG, "setting stop alarm to alarm " + timeleft + " date:" + date + " duration:" + duration);
+			Intent intentAlarm = new Intent("stopAlarm");
 			PendingIntent startPIntent = PendingIntent.getBroadcast(c, 0,
 					intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
 			
@@ -177,13 +210,13 @@ public class ScheduleService extends BroadcastReceiver {
 
 			// set the alarm for particular time
 			alarmManager.set(AlarmManager.RTC_WAKEUP, time, startPIntent);
-			Toast.makeText(c, "Service will automatically start at " + date,
-			Toast.LENGTH_LONG).show();
+			/*Toast.makeText(c, "Service will automatically start at " + date,
+			Toast.LENGTH_LONG).show();*/
 	}
 	
 
 	public static void cancelAlarm(Context c) {
-		Log.d(TAG, "canceling alarm");
+		Log.d(TAG, "canceling start alarm");
 
 		Intent intentAlarm = new Intent("startAlarm");
 		PendingIntent startPIntent = PendingIntent.getBroadcast(c, 0,
@@ -193,10 +226,17 @@ public class ScheduleService extends BroadcastReceiver {
 		AlarmManager alarmManager = (AlarmManager) c
 				.getSystemService(Context.ALARM_SERVICE);
 
-		// set the alarm for particular time
+		// stop alarm
 		alarmManager.cancel(startPIntent);
-		// Toast.makeText(this, "Alarm Scheduled for " + timeleft,
-		// Toast.LENGTH_LONG).show();
+		
+		Log.d(TAG, "canceling stop alarm");
+		Intent intentStopAlarm = new Intent("startAlarm");
+		PendingIntent stopPIntent = PendingIntent.getBroadcast(c, 0,
+				intentStopAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
+
+		// stop alarm
+		alarmManager.cancel(stopPIntent);
+		
 
 	}
 
