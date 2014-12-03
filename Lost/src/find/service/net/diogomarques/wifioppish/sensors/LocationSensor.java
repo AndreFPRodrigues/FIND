@@ -1,10 +1,17 @@
 package find.service.net.diogomarques.wifioppish.sensors;
 
+import java.lang.reflect.Method;
+
 import android.content.Context;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 
 /**
@@ -21,19 +28,25 @@ public class LocationSensor extends AbstractSensor {
 
 	private static final String TAG = "LocationSensor";
 
-	// location providers will only send updates when the location has changed
-	// by at least DISTANCE meters, AND at least X_UPDATE_INTERVAL milliseconds
-	// have passed
-	private static final int GPS_UPDATE_INTERVAL = 3 * 60 * 1000; // 3 minutes
-	private static final int WIFI_UPDATE_INTERVAL = 2 * 60 * 1000; // 2 minutes
+	private static final int INITIAL_INTERVAL = 2 * 60 * 1000; // 2 minutes
+	private static final int SUBSEQUENT_INTERVAL = 10 * 60 * 1000; // 10 minutes
 	private static final int DISTANCE = 5; // meters
+
+	private int currentInterval;
+	private boolean changedInterval;
+	private String currentProvider;
+
+	private static final int CONFIDENCE_HIGH = 10;
+	private static final int CONFIDENCE_LOW = 5;
 
 	private Context context;
 	private LocationManager mLocManager;
+	private Handler handler;
 
-	// data
-	private Location currentLocation;
-	private int accuracy;
+	// location data
+	private double latitude;
+	private double longitude;
+	private long time;
 
 	private LocationListener locationListener = new LocationListener() {
 
@@ -56,8 +69,19 @@ public class LocationSensor extends AbstractSensor {
 		public void onLocationChanged(Location location) {
 			Log.i(TAG, "Location Changed. Updated by " + location.getProvider()
 					+ " provider.");
-			
-			updateLocation(location);
+
+			latitude = location.getLatitude();
+			longitude = location.getLongitude();
+			time = location.getTime();
+
+			Log.i(TAG, "Latitude is " + latitude + ". Longitude is "
+					+ longitude);
+
+			if (currentInterval == INITIAL_INTERVAL) { // first location found
+				// set less frequent updates
+				currentInterval = SUBSEQUENT_INTERVAL;
+				changedInterval = true;
+			}
 		}
 	};
 
@@ -69,26 +93,43 @@ public class LocationSensor extends AbstractSensor {
 	 */
 	public LocationSensor(Context c) {
 		super(c);
-		currentLocation = new Location("");
-		currentLocation.setAccuracy(10000000);
 		context = c;
+		mLocManager = (LocationManager) context
+				.getSystemService(Context.LOCATION_SERVICE);
+		handler = new Handler();
+		currentInterval = INITIAL_INTERVAL;
 	}
 
 	@Override
 	public void startSensor() {
+		currentProvider = getBestProvider();
+		Log.i(TAG, "Chosen provider: " + currentProvider);
 		registerLocationListeners(locationListener);
+		handler.postDelayed(mRunnable, currentInterval);
 	}
 
 	@Override
 	public Object getCurrentValue() {
-		double lat = currentLocation.getLatitude();
-		double lon = currentLocation.getLongitude();
 
-		return new double[] { lat, lon, 10 };
+		int confidence = getConfidenceValue();
+		return new double[] { latitude, longitude, confidence };
+	}
+
+	private int getConfidenceValue() {
+		int confidence = CONFIDENCE_HIGH;
+
+		if (latitude == 0 && longitude == 0) {
+			confidence = 0;
+		} else if (System.currentTimeMillis() - time >= SUBSEQUENT_INTERVAL / 2) {
+			confidence = CONFIDENCE_LOW;
+		}
+
+		return confidence;
 	}
 
 	@Override
 	public void stopSensor() {
+		handler.removeCallbacks(mRunnable);
 		unregisterLocationListener(locationListener);
 	}
 
@@ -99,18 +140,18 @@ public class LocationSensor extends AbstractSensor {
 	 *            location listener to receive coordinate updates
 	 */
 	private void registerLocationListeners(LocationListener locListener) {
-		context.hashCode();
-
-		if (mLocManager == null)
-			mLocManager = (LocationManager) context
-					.getSystemService(Context.LOCATION_SERVICE);
 
 		unregisterLocationListener(locListener);
+		mLocManager.requestLocationUpdates(currentProvider, currentInterval,
+				DISTANCE, locListener);
+	}
 
-		mLocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-				GPS_UPDATE_INTERVAL, DISTANCE, locListener);
-		mLocManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-				WIFI_UPDATE_INTERVAL, DISTANCE, locListener);
+	private String getBestProvider() {
+		Criteria myCriteria = new Criteria();
+		myCriteria.setAccuracy(Criteria.ACCURACY_LOW);
+		myCriteria.setPowerRequirement(Criteria.POWER_LOW);
+
+		return mLocManager.getBestProvider(myCriteria, true);
 	}
 
 	/**
@@ -119,45 +160,78 @@ public class LocationSensor extends AbstractSensor {
 	 * @param mLocationListener
 	 *            location listener to remove
 	 */
-	private void unregisterLocationListener(
-			LocationListener locListener) {
+	private void unregisterLocationListener(LocationListener locListener) {
 
-		if (mLocManager != null)
-			mLocManager.removeUpdates(locListener);
-	}
-
-	public void updateLocation(Location newLocation) {
-		if (isBetterLocation(newLocation, currentLocation)) {
-			currentLocation = newLocation;
-			Log.d(TAG, "Current best location updated!");
-		}
+		mLocManager.removeUpdates(locListener);
 	}
 
 	/**
-	 * Determines whether one Location reading is better than the current
-	 * Location fix
-	 * 
-	 * @param location
-	 *            The new Location that you want to evaluate
-	 * @param currentBestLocation
-	 *            The current Location fix, to which you want to compare the new
-	 *            one
+	 * Checks if current provider is still enabled. If not, then tries to change
+	 * provider
 	 */
-	private boolean isBetterLocation(Location newLocation,
-			Location currentBestLocation) {
+	private Runnable mRunnable = new Runnable() {
 
-		// Check whether the new location fix is more or less accurate
-		int accuracyDelta = (int) (newLocation.getAccuracy() - (currentBestLocation
-				.getAccuracy() + accuracy));
-		boolean isMoreAccurate = accuracyDelta < 0;
+		@Override
+		public void run() {
+			Log.e(TAG, "run");
 
-		// Determine location quality using its accuracy
-		if (isMoreAccurate)
-			accuracy = DISTANCE;
-		else
-			accuracy += DISTANCE;
+			if (betterConnectionAvailable()) {
+				// change provider
+				currentProvider = currentProvider
+						.equals(LocationManager.GPS_PROVIDER) ? LocationManager.NETWORK_PROVIDER
+						: LocationManager.GPS_PROVIDER;
+				Log.i(TAG, "Chosen provider: " + currentProvider);
+				registerLocationListeners(locationListener);
+			} else if (changedInterval) {
+				// register again for the changes to take effect
+				registerLocationListeners(locationListener);
+				changedInterval = false;
+				Log.i(TAG, "changed interval");
+			}
+			handler.postDelayed(mRunnable, currentInterval);
+		}
 
-		return isMoreAccurate;
+	};
+
+	private boolean betterConnectionAvailable() {
+		// change from gps to network provider even if ap is enabled
+		if (currentProvider.equals(LocationManager.GPS_PROVIDER)
+				&& (isWifiEnabled() || isAPEnabled())) {
+			return true;
+		} else if (currentProvider.equals(LocationManager.NETWORK_PROVIDER)
+				&& !isWifiEnabled() && !isAPEnabled()) {
+			return true;
+		}
+		return false;
 	}
 
+	private boolean isWifiEnabled() {
+		// TODO: check if it really has Internet access
+
+		ConnectivityManager cm = (ConnectivityManager) context
+				.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo ni = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+
+		return ni.isConnected();
+	}
+
+	private boolean isAPEnabled() {
+		boolean apEnabled = false;
+
+		WifiManager manager = (WifiManager) context
+				.getSystemService(Context.WIFI_SERVICE);
+
+		try {
+			final Method method = manager.getClass().getDeclaredMethod(
+					"isWifiApEnabled");
+			method.setAccessible(true);
+			apEnabled = (Boolean) method.invoke(manager);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			Log.e(TAG, "Could not check if AP is enabled.");
+		}
+
+		return apEnabled;
+	}
 }
