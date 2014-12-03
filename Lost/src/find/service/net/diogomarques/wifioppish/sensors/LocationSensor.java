@@ -1,14 +1,17 @@
 package find.service.net.diogomarques.wifioppish.sensors;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.lang.reflect.Method;
 
 import android.content.Context;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 
 /**
@@ -24,40 +27,28 @@ import android.util.Log;
 public class LocationSensor extends AbstractSensor {
 
 	private static final String TAG = "LocationSensor";
-	private static final int CONFIDENCE_INTERVAL = 5;	 // in seconds
-	private static final int GPS_UPDATE_INTERVAL = 3 * 60 * 1000; // 3 minutes
-	private static final int WIFI_UPDATE_INTERVAL = 1 * 60 * 1000; // 1 minute
+
+	private static final int INITIAL_INTERVAL = 2 * 60 * 1000; // 2 minutes
+	private static final int SUBSEQUENT_INTERVAL = 10 * 60 * 1000; // 10 minutes
+	private static final int DISTANCE = 5; // meters
+
+	private int currentInterval;
+	private boolean changedInterval;
+	private String currentProvider;
+
+	private static final int CONFIDENCE_HIGH = 10;
+	private static final int CONFIDENCE_LOW = 5;
+
 	private Context context;
 	private LocationManager mLocManager;
-	private long lastUpdate;
-	private ScheduledExecutorService schedulerConf;
-	private boolean gpsConnected;
+	private Handler handler;
 
-	// data
-	private double latitude, longitude;
-	private int confidence;
+	// location data
+	private double latitude;
+	private double longitude;
+	private long time;
 
-	/**
-	 * Mediocre confidence level for location update, meaning that the location
-	 * refers to the previously successfully retrieved location
-	 */
-	public static final int CONFIDENCE_LAST_KNOWN = 0;
-
-	/**
-	 * Reasonable confidence level, tipically associated with coordinates
-	 * exchanged by peers geographicaly near the victim.
-	 * <p>
-	 * Reserved for future use.
-	 */
-	public static final int CONFIDENCE_APPROXIMATE = 5;
-
-	/**
-	 * Maximum confidence level for location update, meaning that the location
-	 * was just retrieved from GPS
-	 */
-	public static final int CONFIDENCE_UPDATED = 10;
-
-	private LocationListener GPSlocationListener = new LocationListener() {
+	private LocationListener locationListener = new LocationListener() {
 
 		@Override
 		public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -76,46 +67,21 @@ public class LocationSensor extends AbstractSensor {
 
 		@Override
 		public void onLocationChanged(Location location) {
-			Log.i(TAG, "Location Changed. Updated by GPS provider.");
-			lastUpdate = System.currentTimeMillis();
+			Log.i(TAG, "Location Changed. Updated by " + location.getProvider()
+					+ " provider.");
 
 			latitude = location.getLatitude();
 			longitude = location.getLongitude();
-			confidence = CONFIDENCE_UPDATED;
+			time = location.getTime();
 
-			if (schedulerConf.isShutdown())
-				initializeScheduler();
-		}
-	};
-	
-	private LocationListener wifiLocationListener = new LocationListener() {
+			Log.i(TAG, "Latitude is " + latitude + ". Longitude is "
+					+ longitude);
 
-		@Override
-		public void onStatusChanged(String provider, int status, Bundle extras) {
-			Log.i(TAG, "Status change: #status=" + status + " for " + provider);
-		}
-
-		@Override
-		public void onProviderEnabled(String provider) {
-			Log.i(TAG, "Provider enabled: " + provider);
-		}
-
-		@Override
-		public void onProviderDisabled(String provider) {
-			Log.i(TAG, "Provider disabled: " + provider);
-		}
-
-		@Override
-		public void onLocationChanged(Location location) {
-			Log.i(TAG, "Location Changed. Updated by Network provider.");
-			lastUpdate = System.currentTimeMillis();
-
-			latitude = location.getLatitude();
-			longitude = location.getLongitude();
-			confidence = CONFIDENCE_APPROXIMATE;
-
-//			if (schedulerConf.isShutdown())
-//				initializeScheduler();
+			if (currentInterval == INITIAL_INTERVAL) { // first location found
+				// set less frequent updates
+				currentInterval = SUBSEQUENT_INTERVAL;
+				changedInterval = true;
+			}
 		}
 	};
 
@@ -128,25 +94,43 @@ public class LocationSensor extends AbstractSensor {
 	public LocationSensor(Context c) {
 		super(c);
 		context = c;
-		confidence = CONFIDENCE_LAST_KNOWN;
-		gpsConnected = false;
-		schedulerConf = Executors.newSingleThreadScheduledExecutor();
+		mLocManager = (LocationManager) context
+				.getSystemService(Context.LOCATION_SERVICE);
+		handler = new Handler();
+		currentInterval = INITIAL_INTERVAL;
 	}
 
 	@Override
 	public void startSensor() {
-		registerLocationListeners(GPSlocationListener, wifiLocationListener);
+		currentProvider = getBestProvider();
+		Log.i(TAG, "Chosen provider: " + currentProvider);
+		registerLocationListeners(locationListener);
+		handler.postDelayed(mRunnable, currentInterval);
 	}
 
 	@Override
 	public Object getCurrentValue() {
+
+		int confidence = getConfidenceValue();
 		return new double[] { latitude, longitude, confidence };
+	}
+
+	private int getConfidenceValue() {
+		int confidence = CONFIDENCE_HIGH;
+
+		if (latitude == 0 && longitude == 0) {
+			confidence = 0;
+		} else if (System.currentTimeMillis() - time >= SUBSEQUENT_INTERVAL / 2) {
+			confidence = CONFIDENCE_LOW;
+		}
+
+		return confidence;
 	}
 
 	@Override
 	public void stopSensor() {
-		schedulerConf.shutdown();
-		unregisterLocationListener(GPSlocationListener, wifiLocationListener);
+		handler.removeCallbacks(mRunnable);
+		unregisterLocationListener(locationListener);
 	}
 
 	/**
@@ -155,21 +139,19 @@ public class LocationSensor extends AbstractSensor {
 	 * @param mLocListener
 	 *            location listener to receive coordinate updates
 	 */
-	private void registerLocationListeners(LocationListener GPSLocListener,
-			LocationListener wifiLocListener) {
-		Log.d(TAG, "registerLocationListener method");
-		context.hashCode();
+	private void registerLocationListeners(LocationListener locListener) {
 
-		if (mLocManager == null)
-			mLocManager = (LocationManager) context
-					.getSystemService(Context.LOCATION_SERVICE);
+		unregisterLocationListener(locListener);
+		mLocManager.requestLocationUpdates(currentProvider, currentInterval,
+				DISTANCE, locListener);
+	}
 
-		unregisterLocationListener(GPSLocListener, wifiLocListener);
-		
-		mLocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-				GPS_UPDATE_INTERVAL, 0, GPSLocListener);
-		mLocManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-				WIFI_UPDATE_INTERVAL, 0, wifiLocListener);
+	private String getBestProvider() {
+		Criteria myCriteria = new Criteria();
+		myCriteria.setAccuracy(Criteria.ACCURACY_LOW);
+		myCriteria.setPowerRequirement(Criteria.POWER_LOW);
+
+		return mLocManager.getBestProvider(myCriteria, true);
 	}
 
 	/**
@@ -178,41 +160,78 @@ public class LocationSensor extends AbstractSensor {
 	 * @param mLocationListener
 	 *            location listener to remove
 	 */
-	private void unregisterLocationListener(
-			LocationListener GPSLocationListener,
-			LocationListener wifiLocationListener) {
-		
-		if (mLocManager != null){
-			mLocManager.removeUpdates(GPSLocationListener);
-			mLocManager.removeUpdates(wifiLocationListener);
-		}
+	private void unregisterLocationListener(LocationListener locListener) {
+
+		mLocManager.removeUpdates(locListener);
 	}
 
 	/**
-	 * Initializes the scheduler to check for valid locations and update
-	 * location confidence level
+	 * Checks if current provider is still enabled. If not, then tries to change
+	 * provider
 	 */
-	private void initializeScheduler() {
-		schedulerConf.scheduleAtFixedRate(new Runnable() {
+	private Runnable mRunnable = new Runnable() {
 
-			@Override
-			public void run() {
-				if ((lastUpdate + CONFIDENCE_INTERVAL * 1000) < System
-						.currentTimeMillis()) {
-					confidence = CONFIDENCE_LAST_KNOWN;
-					if (gpsConnected) {
-						Log.i(TAG, "No coordinates in the last "
-								+ CONFIDENCE_INTERVAL + " seconds, confidence="
-								+ confidence);
-						gpsConnected = false;
-					}
-				} else if (!gpsConnected) {
-					Log.i(TAG, "Receiving coordinates, confidence="
-							+ confidence);
-					gpsConnected = true;
-				}
+		@Override
+		public void run() {
+			Log.e(TAG, "run");
+
+			if (betterConnectionAvailable()) {
+				// change provider
+				currentProvider = currentProvider
+						.equals(LocationManager.GPS_PROVIDER) ? LocationManager.NETWORK_PROVIDER
+						: LocationManager.GPS_PROVIDER;
+				Log.i(TAG, "Chosen provider: " + currentProvider);
+				registerLocationListeners(locationListener);
+			} else if (changedInterval) {
+				// register again for the changes to take effect
+				registerLocationListeners(locationListener);
+				changedInterval = false;
+				Log.i(TAG, "changed interval");
 			}
-		}, 0, CONFIDENCE_INTERVAL, TimeUnit.SECONDS);
+			handler.postDelayed(mRunnable, currentInterval);
+		}
+
+	};
+
+	private boolean betterConnectionAvailable() {
+		// change from gps to network provider even if ap is enabled
+		if (currentProvider.equals(LocationManager.GPS_PROVIDER)
+				&& (isWifiEnabled() || isAPEnabled())) {
+			return true;
+		} else if (currentProvider.equals(LocationManager.NETWORK_PROVIDER)
+				&& !isWifiEnabled() && !isAPEnabled()) {
+			return true;
+		}
+		return false;
 	}
 
+	private boolean isWifiEnabled() {
+		// TODO: check if it really has Internet access
+
+		ConnectivityManager cm = (ConnectivityManager) context
+				.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo ni = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+
+		return ni.isConnected();
+	}
+
+	private boolean isAPEnabled() {
+		boolean apEnabled = false;
+
+		WifiManager manager = (WifiManager) context
+				.getSystemService(Context.WIFI_SERVICE);
+
+		try {
+			final Method method = manager.getClass().getDeclaredMethod(
+					"isWifiApEnabled");
+			method.setAccessible(true);
+			apEnabled = (Boolean) method.invoke(manager);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			Log.e(TAG, "Could not check if AP is enabled.");
+		}
+
+		return apEnabled;
+	}
 }
