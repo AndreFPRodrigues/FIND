@@ -7,17 +7,25 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import find.service.gcm.Notifications;
+import find.service.net.diogomarques.wifioppish.INetworkingFacade.OnAccessPointScanListener;
 import find.service.net.diogomarques.wifioppish.networking.Message;
 import find.service.net.diogomarques.wifioppish.networking.MessageGroup;
 import find.service.net.diogomarques.wifioppish.networking.SoftAPDelegate;
 import find.service.net.diogomarques.wifioppish.networking.UDPDelegate;
 import find.service.net.diogomarques.wifioppish.networking.WiFiDelegate;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiManager;
 import android.net.wifi.WifiConfiguration.KeyMgmt;
+import android.os.Handler;
 import android.util.Log;
 
 /**
@@ -36,8 +44,9 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 	private final SoftAPDelegate mSoftAP;
 	private final WiFiDelegate mWiFi;
 	private final UDPDelegate mUdp;
-	
-	private final String TAG="LOSTService";
+
+	private final String TAG = "LOST Service";
+
 	/**
 	 * Static factory that creates instances of networking controllers.
 	 * 
@@ -54,13 +63,19 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 	}
 
 	/**
-	 * Convenience method to create an {@link AndroidNetworkingFacade} instance with 
-	 * some default values
-	 * @param context Android context
-	 * @param environment LOST-OppNet Environment
-	 * @param softAP Software AccessPoint controller
-	 * @param wiFi WiFi controller
-	 * @param udp UDP network manager to establish connections
+	 * Convenience method to create an {@link AndroidNetworkingFacade} instance
+	 * with some default values
+	 * 
+	 * @param context
+	 *            Android context
+	 * @param environment
+	 *            LOST-OppNet Environment
+	 * @param softAP
+	 *            Software AccessPoint controller
+	 * @param wiFi
+	 *            WiFi controller
+	 * @param udp
+	 *            UDP network manager to establish connections
 	 */
 	private AndroidNetworkingFacade(Context context, IEnvironment environment,
 			SoftAPDelegate softAP, WiFiDelegate wiFi, UDPDelegate udp) {
@@ -73,6 +88,7 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 
 	/**
 	 * Gets the current Android context
+	 * 
 	 * @return Android context
 	 */
 	protected Context getContext() {
@@ -113,7 +129,7 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 	public void send(Message msg, OnSendListener listener) {
 		mUdp.send(msg, listener);
 	}
-	
+
 	@Override
 	public void send(MessageGroup msgs, OnSendListener listener) {
 		mUdp.send(msgs, listener);
@@ -135,57 +151,103 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 		mWiFi.scanForAP(timeoutMilis, listener, this);
 
 	}
-	
+
 	@Override
 	public void scanForInternet(int timeout, OnInternetConnection listener) {
-		boolean connected=false;
-		long startTime = new Date().getTime();
-		while (!connected) {
-			long tick = new Date().getTime();
-			if (tick > startTime + timeout) {
-				Log.w("", "Internet scan timeout");
-				listener.onScanTimeout();
-				break;
-			}
-			while (true) {
-				if (new Date().getTime() > tick + mEnvironment.getPreferences().getScanPeriod()) {
-					if(isNetworkAvailable()){
-						if(ping()){
-							Log.w(TAG, " Connected internet");
-							connected=true;
-							listener.onInternetConnection();
-						}else{
-							Log.w(TAG, " Ping failed");
+		Log.d(TAG, " Scan asas internet");
 
-						}
-					}
+		boolean connected = false;
 
-				
-					break;
-				}
+		if (isNetworkAvailable()) {
+			if (ping()) {
+				Log.d(TAG, " Connected internet");
+				connected = true;
+				listener.onInternetConnection();
+				return;
+			} else {
+				Log.d(TAG, " No ping internet");
+
 			}
 		}
-		
+		internetTicking(timeout, mEnvironment.getPreferences().getScanPeriod(),
+				0, listener);
+
+		/*
+		 * long startTime = new Date().getTime(); while (!connected) {
+		 * Log.d(TAG, " Notinternet");
+		 * 
+		 * long tick = new Date().getTime(); if (tick > startTime + timeout) {
+		 * Log.w("", "Internet scan timeout"); listener.onScanTimeout(); break;
+		 * } while (true) { if (new Date().getTime() > tick +
+		 * mEnvironment.getPreferences().getScanPeriod()) { Log.d(TAG,
+		 * " verify networkasas");
+		 * 
+		 * if(isNetworkAvailable()){ if(ping()){ Log.d(TAG,
+		 * " Connected internet"); connected=true;
+		 * listener.onInternetConnection(); }else{ Log.d(TAG,
+		 * " No ping internet");
+		 * 
+		 * } }else{ Log.d(TAG, " No network failed");
+		 * 
+		 * }
+		 * 
+		 * break; }
+		 * 
+		 * } }
+		 */
+
 	}
-	
+
+	private void internetTicking(final int timeoutMilis, final int delay,
+			final long totaltime, final OnInternetConnection listener) {
+		Timer timer = new Timer();
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				if (totaltime >= timeoutMilis) {
+					Log.w("", "Internet timeout");
+					listener.onScanTimeout();
+				} else {
+					long totalTime = delay + totaltime;
+					if (isNetworkAvailable()) {
+						if (ping()) {
+							Log.d(TAG, " Connected internet");
+							listener.onInternetConnection();
+							return;
+						}
+						internetTicking(timeoutMilis, delay, totalTime,
+								listener);
+						Log.d(TAG, " No  internet");
+					}
+
+				}
+			}
+		}, delay);
+	}
+
 	/**
 	 * Checks if an Internet connection is available
+	 * 
 	 * @return True if connection is available; false otherwise
 	 */
 	private boolean isNetworkAvailable() {
-	    ConnectivityManager connectivityManager 
-	          = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-	    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-	    return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+		ConnectivityManager connectivityManager = (ConnectivityManager) mContext
+				.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo activeNetworkInfo = connectivityManager
+				.getActiveNetworkInfo();
+		return activeNetworkInfo != null
+				&& activeNetworkInfo.isConnectedOrConnecting();
 	}
-	
+
 	/**
-	 * Does a network ping to a given hostname 
-	 * @param url Hostname to ping
+	 * Does a network ping to a given hostname
+	 * 
+	 * @param url
+	 *            Hostname to ping
 	 * @return Ping command output
 	 */
-	private  boolean ping() {
-		
+	private boolean ping() {
+
 		try {
 			URL url = new URL("http://www.google.com");
 			HttpURLConnection urlc = (HttpURLConnection) url.openConnection();

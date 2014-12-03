@@ -3,6 +3,8 @@ package find.service.net.diogomarques.wifioppish.networking;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import find.service.net.diogomarques.wifioppish.AndroidNetworkingFacade;
@@ -16,6 +18,8 @@ import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
+import android.os.CountDownTimer;
+import android.os.Looper;
 import android.util.Log;
 
 public class WiFiDelegate {
@@ -72,7 +76,7 @@ public class WiFiDelegate {
 		manager.setWifiEnabled(true);
 
 		// start receiver for scans
-		BroadcastReceiver scanReceiver = new BroadcastReceiver() {
+		final BroadcastReceiver scanReceiver = new BroadcastReceiver() {
 
 			@Override
 			public void onReceive(Context context, Intent intent) {
@@ -94,7 +98,7 @@ public class WiFiDelegate {
 										bestSignal.level, result.level) < 0)
 							bestSignal = result;
 					}
-				} 
+				}
 				if (bestSignal != null) {
 					Log.w(TAG, "Settled for AP with signal  "
 							+ bestSignal.level);
@@ -127,24 +131,35 @@ public class WiFiDelegate {
 		// scan immediately one time - fast reconnect
 		// "In this case nevertheless, the node will not scan for t_scan seconds (which might be very long) but immediately try to ям?nd a new AP or becomes one within a few seconds (fast reconnect)."
 		manager.startScan();
-		// every scanPeriod, scan again
-		// TODO: user countdown timer
-		long startTime = new Date().getTime();
-		while (!connected.get()) {
-			long tick = new Date().getTime();
-			if (tick > startTime + timeoutMilis) {
-				Log.w("", "Scan timeout");
-				safeUnregisterReceiver(scanReceiver);
-				listener.onScanTimeout();
-				break;
-			}
-			while (true) {
-				if (new Date().getTime() > tick + preferences.getScanPeriod()) {
-					manager.startScan();
-					break;
+		if (!connected.get()) {
+			scanTick(timeoutMilis, preferences.getScanPeriod(), manager,
+					connected, 0, scanReceiver, listener);
+		}
+
+	}
+
+	private void scanTick(final int timeoutMilis, final int delay,
+			final WifiManager manager, final AtomicBoolean connected,
+			final long totaltime, final BroadcastReceiver scanReceiver,
+			final OnAccessPointScanListener listener) {
+		Timer timer = new Timer();
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				manager.startScan();
+				if (!connected.get()) {
+					if (totaltime >= timeoutMilis) {
+						Log.w("", "Scan timeout");
+						safeUnregisterReceiver(scanReceiver);
+						listener.onScanTimeout();
+					} else {
+						long totalTime = delay + totaltime;
+						scanTick(timeoutMilis, delay, manager, connected,
+								totalTime, scanReceiver, listener);
+					}
 				}
 			}
-		}
+		}, delay);
 	}
 
 }

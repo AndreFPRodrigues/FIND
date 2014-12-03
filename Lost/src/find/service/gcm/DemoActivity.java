@@ -157,7 +157,6 @@ public class DemoActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		Log.d(TAG, "resumed");
 		onStartUp();
 	}
 	

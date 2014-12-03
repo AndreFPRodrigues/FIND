@@ -102,7 +102,7 @@ public class AndroidPreferences implements IDomainPreferences {
 
 	@Override
 	public int getScanPeriod() {
-		return 5000;
+		return 10000;
 	}
 
 	@Override

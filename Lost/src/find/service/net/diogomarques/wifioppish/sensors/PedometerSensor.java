@@ -26,7 +26,7 @@ public class PedometerSensor extends AbstractSensor {
 		@Override
 		public void onStep() {
 			steps++;
-			Log.i(TAG, steps + " movements");
+			//Log.i(TAG, steps + " movements");
 		}
 	};
 	
