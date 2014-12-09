@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -39,8 +40,10 @@ import org.json.JSONObject;
 import com.google.android.gms.maps.model.LatLng;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Log;
@@ -49,7 +52,9 @@ public class RequestServer {
 
 	private static String postCoordinates = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims";
 	private static String postLogFile = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/log/upload.php";
-	private static String TAG = "gcm"; 
+	private static String downloadAPK = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/apk/";
+
+	private static String TAG = "gcm";
 
 	/**
 	 * Check if there is wifi connection
@@ -376,7 +381,7 @@ public class RequestServer {
 				int bytesRead, bytesAvailable, bufferSize;
 				byte[] buffer;
 				int maxBufferSize = 1 * 1024 * 1024;
-				File sourceFile = new File(filePath+fileName);
+				File sourceFile = new File(filePath + fileName);
 
 				if (!sourceFile.isFile()) {
 
@@ -396,22 +401,26 @@ public class RequestServer {
 						conn = (HttpURLConnection) url.openConnection();
 						conn.setDoInput(true); // Allow Inputs
 						conn.setDoOutput(true); // Allow Outputs
-						conn.setUseCaches(false); // Don't use a Cached Copy 
+						conn.setUseCaches(false); // Don't use a Cached Copy
 						conn.setRequestMethod("POST");
 						conn.setRequestProperty("Connection", "Keep-Alive");
 						conn.setRequestProperty("ENCTYPE",
 								"multipart/form-data");
 						conn.setRequestProperty("Content-Type",
 								"multipart/form-data;boundary=" + boundary);
-						conn.setRequestProperty("uploaded_file", nodeid+"_"+System.currentTimeMillis() +".txt");
+						conn.setRequestProperty("uploaded_file", nodeid + "_"
+								+ System.currentTimeMillis() + ".txt");
 
 						dos = new DataOutputStream(conn.getOutputStream());
 
 						dos.writeBytes(twoHyphens + boundary + lineEnd);
 						dos.writeBytes("Content-Disposition: form-data; name='uploaded_file';filename='"
-								+ nodeid+"_"+System.currentTimeMillis() +".txt" + "'" + lineEnd);
-				
-						dos.writeBytes(lineEnd); 
+								+ nodeid
+								+ "_"
+								+ System.currentTimeMillis()
+								+ ".txt" + "'" + lineEnd);
+
+						dos.writeBytes(lineEnd);
 
 						// create a buffer of maximum size
 						bytesAvailable = fileInputStream.available();
@@ -457,7 +466,7 @@ public class RequestServer {
 						fileInputStream.close();
 						dos.flush();
 						dos.close();
-						
+
 						sourceFile.delete();
 
 					} catch (MalformedURLException ex) {
@@ -478,6 +487,52 @@ public class RequestServer {
 			}
 		}).start();
 
+	}
+
+	public static void downloadAPK(final Context context,final String apk) {
+		new Thread(new Runnable() {
+			public void run() {
+				try {
+
+					URL url = new URL(downloadAPK + apk);
+					HttpURLConnection c = (HttpURLConnection) url
+							.openConnection();
+					c.setRequestMethod("GET");
+					c.setDoOutput(true);
+					c.connect();
+
+					String PATH = Environment.getExternalStorageDirectory()
+							+ "/download/";
+					File file = new File(PATH);
+					file.mkdirs();
+					File outputFile = new File(file, "app.apk");
+					FileOutputStream fos = new FileOutputStream(outputFile);
+
+					InputStream is = c.getInputStream();
+
+					byte[] buffer = new byte[1024];
+					int len1 = 0;
+					while ((len1 = is.read(buffer)) != -1) {
+						fos.write(buffer, 0, len1);
+					}
+					fos.close();
+					is.close();// till here, it works fine - .apk is download to
+								// my sdcard in download file
+
+					Intent intent = new Intent(Intent.ACTION_VIEW);
+					intent.setDataAndType(Uri.fromFile(new File(Environment
+							.getExternalStorageDirectory()
+							+ "/download/"
+							+ "app.apk")),
+							"application/vnd.android.package-archive");
+					intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+					context.startActivity(intent);
+
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}).start();
 	}
 
 }

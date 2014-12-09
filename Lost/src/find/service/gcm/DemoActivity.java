@@ -27,7 +27,11 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -523,26 +527,27 @@ public class DemoActivity extends Activity {
 	}
 
 
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+	    MenuInflater inflater = getMenuInflater();
+	    inflater.inflate(R.menu.downloadmenu, menu);
+	    return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    // Handle item selection
+	    switch (item.getItemId()) {
+	        case R.id.down_message:
+	        	RequestServer.downloadAPK(this,"message.apk");
+	            return true;
+	        case R.id.down_rescue:
+	        	RequestServer.downloadAPK(this,"rescuer.apk");
 
-	/**
-	 * Check the device to make sure it has the Google Play Services APK. If it
-	 * doesn't, display a dialog that allows users to download the APK from the
-	 * Google Play Store or enable it in the device's system settings.
-	 */
-	private boolean checkPlayServices() {
-		int resultCode = GooglePlayServicesUtil
-				.isGooglePlayServicesAvailable(this);
-		if (resultCode != ConnectionResult.SUCCESS) {
-			if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-				GooglePlayServicesUtil.getErrorDialog(resultCode, this,
-						PLAY_SERVICES_RESOLUTION_REQUEST).show();
-			} else {
-				Log.i(TAG, "This device is not supported.");
-				finish();
-			}
-			return false;
-		}
-		return true;
+	            return true;
+	        default:
+	            return super.onOptionsItemSelected(item);
+	    }
 	}
 
 	@Override

@@ -48,5 +48,7 @@
     <string name="associate">Associate with alert</string>
     <string name="disassociate">Disassociate from alert</string>
     <string name="syncService"> Waiting for internet connection to sync files</string>
+    <string name="down_rescue">Get Rescuer</string>
+    <string name="down_message">Get Messager</string>
 
 </resources>

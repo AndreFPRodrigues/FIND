@@ -211,7 +211,7 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 					long totalTime = delay + totaltime;
 					if (isNetworkAvailable()) {
 						if (ping()) {
-							Log.d(TAG, " Connected internet");
+							Log.d(TAG, " Ping successfull");
 							listener.onInternetConnection();
 							return;
 						}
