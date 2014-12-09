@@ -458,7 +458,7 @@ public class RequestServer {
 						dos.flush();
 						dos.close();
 						
-						//sourceFile.delete();
+						sourceFile.delete();
 
 					} catch (MalformedURLException ex) {
 
