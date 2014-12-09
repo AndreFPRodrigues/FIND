@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import find.service.net.diogomarques.wifioppish.AndroidNetworkingFacade;
+import find.service.net.diogomarques.wifioppish.AndroidPreferences;
 import android.content.Context;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
@@ -62,16 +63,35 @@ public class SoftAPDelegate {
 			Method mSetWifiApEnabled = manager.getClass().getMethod(
 					"setWifiApEnabled", WifiConfiguration.class, boolean.class);
 			mSetWifiApEnabled.invoke(manager, cfg, enable);
+			
 		} catch (SecurityException e) {
 			Log.e(TAG, e.getMessage(), e);
+			AndroidPreferences.apAvailable=false;
+			Log.d(TAG, "AP SET:FALSE");
 		} catch (NoSuchMethodException e) {
 			Log.e(TAG, e.getMessage(), e);
+			AndroidPreferences.apAvailable=false;
+			Log.d(TAG, "AP SET:FALSE");
+
+
 		} catch (IllegalArgumentException e) {
 			Log.e(TAG, e.getMessage(), e);
+			AndroidPreferences.apAvailable=false;
+			Log.d(TAG, "AP SET:FALSE");
+
+
 		} catch (IllegalAccessException e) {
 			Log.e(TAG, e.getMessage(), e);
+			AndroidPreferences.apAvailable=false;
+			Log.d(TAG, "AP SET:FALSE");
+
+
 		} catch (InvocationTargetException e) {
 			Log.e(TAG, e.getMessage(), e);
+			AndroidPreferences.apAvailable=false;
+			Log.d(TAG, "AP SET:FALSE");
+
+
 		}
 
 	}

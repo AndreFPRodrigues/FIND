@@ -23,13 +23,14 @@ public class StateScanning extends AState {
 	@Override
 	public void start(int timeout, Context c) {
 		
-		Log.w("Machine State", "Scanning");
+		Log.w("Machine State", "Scanning:" + timeout);
 		
 		final INetworkingFacade networking = environment.getNetworkingFacade();
 		
 		// add auto-message to be accumulated
 		Message autoMessage = environment.createTextMessage("");
 		environment.pushMessageToQueue(autoMessage);
+		
 		environment.deliverMessage("entered scanning state");		
 		
 		networking.scanForAP(timeout, new INetworkingFacade.OnAccessPointScanListener() {

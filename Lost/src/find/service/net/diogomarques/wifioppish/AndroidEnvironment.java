@@ -201,10 +201,13 @@ public class AndroidEnvironment implements IEnvironment {
 	@Override
 	public void gotoState(State state) {
 		//LOSTService.saveLogCat("state");
-
+		
 		if (nextState != State.Stopped || state == State.InternetConn) {
 			semNextState.release();
 			nextState = state;
+			// add auto-message to be accumulated
+			Message autoMessage = createTextMessage("");
+			pushMessageToQueue(autoMessage);
 		}else{
 			semNextState.release();
 			nextState = State.Stopped;

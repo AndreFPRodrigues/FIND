@@ -24,10 +24,15 @@ public class StateBeaconing extends AState {
 	@Override
 	public void start(int timeout, Context c) {
 		
-		Log.w("Machine State", "Beaconing");
+		Log.w("Machine State", "Beaconing:" +timeout);
 		
 		final INetworkingFacade networking = environment.getNetworkingFacade();
+		
 		environment.deliverMessage("entered beaconing state");
+		// add auto-message to be accumulated
+		Message autoMessage = environment.createTextMessage("");
+		environment.pushMessageToQueue(autoMessage);
+		
 		environment.deliverMessage("(re) starting AP");
 		networking.startAcessPoint();
 		networking.receiveFirst(timeout,

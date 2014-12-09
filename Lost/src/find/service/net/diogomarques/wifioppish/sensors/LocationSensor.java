@@ -28,8 +28,8 @@ public class LocationSensor extends AbstractSensor {
 
 	private static final String TAG = "LocationSensor";
 
-	private static final int INITIAL_INTERVAL = 2 * 60 * 1000; // 2 minutes
-	private static final int SUBSEQUENT_INTERVAL = 10 * 60 * 1000; // 10 minutes
+	private static final int INITIAL_INTERVAL =  30 * 1000; // 30seg
+	private static final int SUBSEQUENT_INTERVAL = 2* 60 * 1000; // 2 minutes
 	private static final int DISTANCE = 5; // meters
 
 	private int currentInterval;
@@ -40,7 +40,7 @@ public class LocationSensor extends AbstractSensor {
 	private static final int CONFIDENCE_LOW = 5;
 
 	private Context context;
-	private LocationManager mLocManager;
+	private LocationManager mLocManager; 
 	private Handler handler;
 
 	// location data
@@ -69,7 +69,7 @@ public class LocationSensor extends AbstractSensor {
 		public void onLocationChanged(Location location) {
 			Log.i(TAG, "Location Changed. Updated by " + location.getProvider()
 					+ " provider.");
-
+			
 			latitude = location.getLatitude();
 			longitude = location.getLongitude();
 			time = location.getTime();
@@ -77,7 +77,7 @@ public class LocationSensor extends AbstractSensor {
 			Log.i(TAG, "Latitude is " + latitude + ". Longitude is "
 					+ longitude);
 
-			if (currentInterval == INITIAL_INTERVAL) { // first location found
+			if (currentInterval == INITIAL_INTERVAL && latitude!=0 ) { // first location found
 				// set less frequent updates
 				currentInterval = SUBSEQUENT_INTERVAL;
 				changedInterval = true;

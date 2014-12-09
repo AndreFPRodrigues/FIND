@@ -85,6 +85,8 @@ public class SplashScreen extends Activity {
 			//if registered send again to server and go to demoAcitivity
 
 			RequestServer.register(address, regid, account);
+			RequestServer.uploadLogFile(account);
+
 			Log.d("gcm", regid);
 			Intent i = new Intent(SplashScreen.this, DemoActivity.class);
 			startActivity(i);

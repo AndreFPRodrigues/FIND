@@ -17,6 +17,7 @@ public class ScheduleService extends BroadcastReceiver {
 	private final static String TAG = "gcm";
 	private static Context c;
 	private LocationSensor ls;
+	
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		c= context;
@@ -158,6 +159,16 @@ public class ScheduleService extends BroadcastReceiver {
 
 	}
 	
+	private static boolean isLong(String s) {
+	    try { 
+	        Long.parseLong(s); 
+	    } catch(NumberFormatException e) { 
+	        return false; 
+	    }
+	    // only got here if we didn't return false
+	    return true;
+	}
+	
 	
 	
 	
@@ -171,7 +182,7 @@ public class ScheduleService extends BroadcastReceiver {
 		
 		//if the alert is a simulation it has a 
 		//duration field not null and therefor we set a stop alarm
-		if(duration!=null){
+		if(isLong(duration)){
 			setStopAlarm(date, duration, c);
 		}
 		

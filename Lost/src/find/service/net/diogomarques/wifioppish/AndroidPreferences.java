@@ -17,7 +17,10 @@ import android.preference.PreferenceManager;
 public class AndroidPreferences implements IDomainPreferences {
 
 	// FIXME switch before deployment
-	public static final boolean DEBUG = true; 
+	public static boolean DEBUG = true; 
+	
+	public static boolean apAvailable = true; 
+
 
 	/*
 	 * Universal timeout parameter for use in debugging.
@@ -69,7 +72,7 @@ public class AndroidPreferences implements IDomainPreferences {
 	public int getTCon() {
 		return getRandomTimeFromKey(R.string.key_t_con);
 	}
-	@Override
+	@Override 
 	public int getTInt() {
 		return DEBUG ? 5000 : getRandomTimeFromKey(R.string.key_t_int);
 	}

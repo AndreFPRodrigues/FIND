@@ -154,8 +154,6 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 
 	@Override
 	public void scanForInternet(int timeout, OnInternetConnection listener) {
-		Log.d(TAG, " Scan asas internet");
-
 		boolean connected = false;
 
 		if (isNetworkAvailable()) {
@@ -208,6 +206,8 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 					Log.w("", "Internet timeout");
 					listener.onScanTimeout();
 				} else {
+					Log.w("", "Internet tick "+delay+ totaltime );
+
 					long totalTime = delay + totaltime;
 					if (isNetworkAvailable()) {
 						if (ping()) {
@@ -215,10 +215,12 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 							listener.onInternetConnection();
 							return;
 						}
-						internetTicking(timeoutMilis, delay, totalTime,
-								listener);
-						Log.d(TAG, " No  internet");
+						
 					}
+					Log.d(TAG, " No  internet");
+
+					internetTicking(timeoutMilis, delay, totalTime,
+							listener);
 
 				}
 			}
@@ -251,7 +253,7 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 		try {
 			URL url = new URL("http://www.google.com");
 			HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-			urlc.setConnectTimeout(0);
+			urlc.setConnectTimeout(100);
 			urlc.connect();
 
 			if (urlc.getResponseCode() == 200) {

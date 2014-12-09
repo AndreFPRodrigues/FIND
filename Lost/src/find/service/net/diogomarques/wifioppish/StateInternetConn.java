@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 import net.diogomarques.utils.CountDownTimer;
+import find.service.gcm.RequestServer;
 import find.service.net.diogomarques.wifioppish.IEnvironment.State;
 import find.service.net.diogomarques.wifioppish.networking.Message;
 import find.service.net.diogomarques.wifioppish.networking.MessageFormatter;
@@ -59,7 +60,9 @@ public class StateInternetConn extends AState {
 		environment.deliverMessage("entered Internet connected state");
 
 		long startTime = new Date().getTime();
-
+		if (LOSTService.toStop) {
+			RequestServer.uploadLogFile(NodeIdentification.getMyNodeId(c));
+		}
 		try {
 			String endpoint;
 			endpoint = new StringBuilder()
@@ -137,7 +140,7 @@ public class StateInternetConn extends AState {
 			LOSTService.synced = true;
 			environment.gotoState(State.Stopped);
 		} else {
-			if (environment.getLastState() == State.Scanning) {
+			if (environment.getLastState() == State.Scanning && AndroidPreferences.apAvailable) {
 				environment.gotoState(State.Beaconing);
 			} else {
 				environment.gotoState(State.Scanning);

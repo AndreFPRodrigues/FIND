@@ -89,6 +89,7 @@ public class LOSTService extends Service {
 	public static void stop(Context context) {
 
 		if (!toStop) {
+
 			LOSTService.toStop = true;
 			Log.d(TAG, "Syncing service");
 			// saveLogCat("stop");
@@ -154,6 +155,7 @@ public class LOSTService extends Service {
 			protected Void doInBackground(Void... params) {
 
 				if (LOSTService.toStop) {
+					
 					environment.startStateLoop(State.Stopped);
 
 				} else {
@@ -201,6 +203,7 @@ public class LOSTService extends Service {
 			}
 			c.close();
 			if (serviceState.equals("Stopping")) {
+				AndroidPreferences.DEBUG=true;
 				LOSTService.toStop = true;
 				startForeground(NOTIFICATION_STICKY,
 						getNotification("FIND Service is syncing"));
@@ -257,12 +260,12 @@ public class LOSTService extends Service {
 					"-------------------Logging----------------------------"
 							+ from);
 			String filePath = Environment.getExternalStorageDirectory()
-					+ "/logcat";
+					+ "/logcat_FIND.txt";
 
 			try {
 
 				Runtime.getRuntime().exec(
-						new String[] { "logcat", "-f", filePath + "_FIND.txt",
+						new String[] { "logcat", "-f", filePath  ,
 								"-v", "time", "dalvikvm:S *:V" });
 				Runtime.getRuntime().exec(new String[] { "logcat", "-c" });
 

@@ -53,6 +53,7 @@ public class LocationFunctions {
 	}
 
 	// Primitive location checker
+	//TODO real location compare
 	public static boolean isInLocation(double[] loc, double f_latS,
 			double f_lonS, double f_latE, double f_lonE) {
 

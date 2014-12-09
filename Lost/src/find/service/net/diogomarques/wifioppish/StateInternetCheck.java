@@ -21,7 +21,7 @@ public class StateInternetCheck extends AState {
 
 	@Override
 	public void start(int timeout, Context context) {
-		Log.w("Machine State", "Internet Checking");
+		Log.w("Machine State", "Internet Checking: " + timeout);
 
 		final INetworkingFacade networking = environment.getNetworkingFacade();
 		environment.deliverMessage("entered Internet state");
@@ -33,7 +33,7 @@ public class StateInternetCheck extends AState {
 					public void onScanTimeout() {
 						environment.deliverMessage("t_int timeout");
 
-						if (environment.getLastState() == State.Scanning) {
+						if (environment.getLastState() == State.Scanning && AndroidPreferences.apAvailable) {
 							environment.deliverMessage("t_internet timeout");
 							environment.gotoState(State.Beaconing);
 						} else {
