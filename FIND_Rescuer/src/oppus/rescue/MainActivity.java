@@ -13,9 +13,11 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -67,6 +69,7 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
 		setContentView(R.layout.activity_main);
 		View decorView = getWindow().getDecorView();
 
@@ -148,12 +151,12 @@ public class MainActivity extends Activity {
 				invalidateOptionsMenu();
 			}
 		};
-		
+
 		mDrawerLayout.setDrawerListener(mDrawerToggle);
 		if (savedInstanceState == null) {
-			
+
 			// on first time display view for first nav item
-			//Load map fragment
+			// Load map fragment
 			fragment = new MapFragmentControl();
 			if (fragment != null) {
 				FragmentManager fragmentManager = getFragmentManager();
@@ -166,8 +169,6 @@ public class MainActivity extends Activity {
 			}
 		}
 	}
-
-
 
 	@Override
 	protected void onDestroy() {
@@ -274,23 +275,24 @@ public class MainActivity extends Activity {
 		// Pass any configuration change to the drawer toggls
 		mDrawerToggle.onConfigurationChanged(newConfig);
 	}
-	
-	//handles screen graph click
+
+	// handles screen graph click
 	public void screenGraph(View v) {
 		fragment.screenGraph();
 	}
-	
-	//handled distance graph click
+
+	// handled distance graph click
 	public void distanceGraph(View v) {
 		fragment.distanceGraph();
 
 	}
-	//handles microGraph graph click
+
+	// handles microGraph graph click
 	public void microGraph(View v) {
 		fragment.microGraph();
 	}
-	
-	//handles close infowindow click  
+
+	// handles close infowindow click
 	public void hideInfo(View v) {
 		fragment.hideInfo();
 	}

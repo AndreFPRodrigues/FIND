@@ -1,18 +1,22 @@
 package oppus.rescue;
 
 import android.app.Fragment;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.os.storage.StorageManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 //import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
@@ -43,52 +47,65 @@ public class MapFragmentControl extends Fragment implements
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
 
-		// TODO get location from the FIND SERVICE
-		// gathered location independently of the service to get points only in
-		// our vicinity and in the DEMO to trigger updates on locations
+		// Ensure Find Service is installed
+		Intent scanIntent = getActivity().getPackageManager()
+				.getLaunchIntentForPackage("find.service");
+		if (scanIntent == null) {
+			Toast.makeText(getActivity().getApplicationContext(), "This application requires FIND Service installed", Toast.LENGTH_LONG).show();
+			Intent marketIntent = new Intent(Intent.ACTION_VIEW,
+					Uri.parse("market://details?id=find.service"));
 
-		if (MapManager.demo) {
+			try {
+				startActivity(marketIntent);
+			} catch (ActivityNotFoundException e2) {
+
+			}
+		} else {
+			// TODO get location from the FIND SERVICE
+			// gathered location independently of the service to get points only
+			// in
+			// our vicinity and in the DEMO to trigger updates on locations
 			mLocationClient = new LocationClient(inflater.getContext(), this,
 					this);
 			// Start with updates turned off
 			// Use high accuracy
 			mLocationClient.connect();
+
+			if (rootView == null)
+				rootView = inflater.inflate(R.layout.main, container, false);
+
+			// TODO remove the thread policy, create a new thread to handle it
+			StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+					.permitAll().build();
+			StrictMode.setThreadPolicy(policy);
+
+			if (mm == null) {
+				// init map manager
+				mm = new MapManager(((MapFragment) getFragmentManager()
+						.findFragmentById(R.id.map)).getMap(), inflater,
+						rootView.findViewById(R.id.infoVictim), rootView);
+
+				// Retrives all poitns stored in the Find service
+				sqlObserver = new SQLittleObserver(getActivity(), mm);
+				sqlObserver.retriveAllNodes();
+
+				// listenings for te internet connect state to request an map
+				// update
+				// from the webservice
+				IntentFilter filter = new IntentFilter();
+				filter.addAction("stateChange");
+				receiver = new BroadcastReceiver() {
+					@Override
+					public void onReceive(Context context, Intent intent) {
+						String state = intent.getStringExtra("State");
+						Log.d("gcm", "state:" + state);
+						if (state.equals("InternetConn"))
+							updateMap();
+					}
+				};
+				getActivity().registerReceiver(receiver, filter);
+			}
 		}
-
-		if (rootView == null)
-			rootView = inflater.inflate(R.layout.main, container, false);
-
-		// TODO remove the thread policy, create a new thread to handle it
-		StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
-				.permitAll().build();
-		StrictMode.setThreadPolicy(policy);
-
-		if (mm == null) {
-			// init map manager
-			mm = new MapManager(((MapFragment) getFragmentManager()
-					.findFragmentById(R.id.map)).getMap(), inflater,
-					rootView.findViewById(R.id.infoVictim), rootView);
-
-			// Retrives all poitns stored in the Find service
-			sqlObserver = new SQLittleObserver(getActivity(), mm);
-			sqlObserver.retriveAllNodes();
-
-			// listenings for te internet connect state to request an map update
-			// from the webservice
-			IntentFilter filter = new IntentFilter();
-			filter.addAction("stateChange");
-			receiver = new BroadcastReceiver() {
-				@Override
-				public void onReceive(Context context, Intent intent) {
-					String state = intent.getStringExtra("State");
-					Log.d("gcm", "state:" + state);
-					if (state.equals("InternetConn"))
-						updateMap();
-				}
-			};
-			getActivity().registerReceiver(receiver, filter);
-		}
-
 		return rootView;
 	}
 
