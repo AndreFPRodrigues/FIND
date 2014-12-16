@@ -1,5 +1,7 @@
 package find.service.net.diogomarques.wifioppish;
 
+import java.net.SocketTimeoutException;
+
 import android.content.Context;
 import android.util.Log;
 import find.service.net.diogomarques.wifioppish.IEnvironment.State;
@@ -15,7 +17,9 @@ public class StateProviding extends AState {
 
 	/**
 	 * Creates a new Providing state
-	 * @param environment Environment running the state machine
+	 * 
+	 * @param environment
+	 *            Environment running the state machine
 	 */
 	public StateProviding(IEnvironment environment) {
 		super(environment);
@@ -23,26 +27,25 @@ public class StateProviding extends AState {
 
 	@Override
 	public void start(int timeout, Context c) {
-		
+
 		Log.w("Machine State", "Providing");
-		
+
 		final INetworkingFacade networking = environment.getNetworkingFacade();
 		environment.deliverMessage("entered providing state");
-
-		networking.receive(timeout, new INetworkingFacade.OnReceiveListener() {
+		INetworkingFacade.OnReceiveListener listener = new INetworkingFacade.OnReceiveListener() {
 			@Override
 			public void onReceiveTimeout(boolean forced) {
 				// t_pro reached
 				if (forced) {
 					environment.deliverMessage("t_pro timeout, stopping AP");
 					networking.stopAccessPoint();
-					
-					//goes to internet state if enabled
-					if(environment.internetState())
+
+					// goes to internet state if enabled
+					if (environment.internetState())
 						environment.gotoState(State.InternetCheck);
 					else
 						environment.gotoState(State.Scanning);
-					}
+				}
 				// no connections
 				else {
 					environment.deliverMessage("no connections to provide for");
@@ -53,20 +56,27 @@ public class StateProviding extends AState {
 			@Override
 			public void onMessageReceived(Message m) {
 				environment.deliverMessage("message received: " + m.toString());
-				
+
 				// avoid duplicates
-				if( !m.getNodeId().equals(environment.getMyNodeId())) {
+				if (!m.getNodeId().equals(environment.getMyNodeId())) {
 					environment.pushMessageToQueue(m);
 					environment.storeReceivedMessage(m);
 				}
 			}
-			
+
 			@Override
 			public void onMessageReceived(MessageGroup msgs) {
-				for(Message m : msgs)
+				for (Message m : msgs)
 					onMessageReceived(m);
 			}
-		});
+
+			@Override
+			public void forceTransition() {
+				onReceiveTimeout(true);
+			}
+		};
+		environment.currentListener(listener);
+		networking.receive(timeout, listener);
 
 	}
 

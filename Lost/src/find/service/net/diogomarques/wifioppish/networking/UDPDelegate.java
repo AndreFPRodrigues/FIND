@@ -224,7 +224,7 @@ public class UDPDelegate {
 		return mSocket;
 	}
 
-	private void releaseBroadcastSocket() {
+	public void releaseBroadcastSocket() {
 		if (mSocket != null && !mSocket.isClosed())
 			mSocket.close();
 		mSocket = null;

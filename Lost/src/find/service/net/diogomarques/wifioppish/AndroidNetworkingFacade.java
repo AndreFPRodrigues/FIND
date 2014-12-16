@@ -102,6 +102,7 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 
 	@Override
 	public void stopAccessPoint() {
+		mUdp.releaseBroadcastSocket();
 		mSoftAP.stopWifiAP(this);
 	}
 

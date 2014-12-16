@@ -13,7 +13,13 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
-
+/**
+ * Settings fragment to show options and filter mechanisms
+ * Currently not implemented
+ * To enable it add it has a item in MainActivity (navDrawerItems)
+ * @author andre
+ *
+ */
 @SuppressLint("ValidFragment")
 public class Settings extends Fragment {
 	
@@ -24,6 +30,7 @@ public class Settings extends Fragment {
 	private boolean showSafe;
 	private CheckBox safe;
 	
+
 	public Settings (){}
 
 	public Settings(MapManager mapManager){

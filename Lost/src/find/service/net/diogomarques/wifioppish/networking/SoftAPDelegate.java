@@ -41,82 +41,109 @@ public class SoftAPDelegate {
 			// Save this configuration for later
 			fOriginalApConfiguration = (WifiConfiguration) mGetWifiApConfiguration
 					.invoke(manager, (Object[]) null);
+
 		} catch (SecurityException e) {
 			e.printStackTrace();
+			AndroidPreferences.apAvailable = false;
 		} catch (NoSuchMethodException e) {
 			e.printStackTrace();
+			AndroidPreferences.apAvailable = false;
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
+			AndroidPreferences.apAvailable = false;
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
+			AndroidPreferences.apAvailable = false;
 		} catch (InvocationTargetException e) {
 			e.printStackTrace();
+			AndroidPreferences.apAvailable = false;
 		}
 	}
+
+	/*
+	 * public boolean getWifiApState(WifiManager mWifiManager) { Method method;
+	 * try { method =
+	 * mWifiManager.getClass().getDeclaredMethod("isWifiApEnabled");
+	 * method.setAccessible(true); //in the case of visibility change in future
+	 * APIs return (Boolean) method.invoke(mWifiManager); } catch
+	 * (NoSuchMethodException e) { // TODO Auto-generated catch block
+	 * e.printStackTrace(); } catch (IllegalArgumentException e) { // TODO
+	 * Auto-generated catch block e.printStackTrace(); } catch
+	 * (IllegalAccessException e) { // TODO Auto-generated catch block
+	 * e.printStackTrace(); } catch (InvocationTargetException e) { // TODO
+	 * Auto-generated catch block e.printStackTrace(); } return false;
+	 * 
+	 * 
+	 * }
+	 */
 
 	private void setSoftAPEnabled(WifiConfiguration cfg, boolean enable) {
 		WifiManager manager = (WifiManager) mContext
 				.getSystemService(Context.WIFI_SERVICE);
+
+		// Log.d(TAG, "APPP 1: " + getWifiApState(manager) + " " + enable);
+
 		if (enable == true)
 			manager.setWifiEnabled(false); // Stop wi-fi station mode
 		try {
+			// Log.d(TAG, "APPP 2: " + getWifiApState(manager)+ " " + enable);
+
 			Method mSetWifiApEnabled = manager.getClass().getMethod(
 					"setWifiApEnabled", WifiConfiguration.class, boolean.class);
-			mSetWifiApEnabled.invoke(manager, cfg, enable);
-			
+			boolean verify = (Boolean) mSetWifiApEnabled.invoke(manager, cfg,
+					enable);
+			Log.d(TAG, "Appp:" + verify);
+
 		} catch (SecurityException e) {
 			Log.e(TAG, e.getMessage(), e);
-			AndroidPreferences.apAvailable=false;
+			AndroidPreferences.apAvailable = false;
 			Log.d(TAG, "AP SET:FALSE");
 		} catch (NoSuchMethodException e) {
 			Log.e(TAG, e.getMessage(), e);
-			AndroidPreferences.apAvailable=false;
+			AndroidPreferences.apAvailable = false;
 			Log.d(TAG, "AP SET:FALSE");
-
-
 		} catch (IllegalArgumentException e) {
 			Log.e(TAG, e.getMessage(), e);
-			AndroidPreferences.apAvailable=false;
+			AndroidPreferences.apAvailable = false;
 			Log.d(TAG, "AP SET:FALSE");
-
-
 		} catch (IllegalAccessException e) {
 			Log.e(TAG, e.getMessage(), e);
-			AndroidPreferences.apAvailable=false;
+			AndroidPreferences.apAvailable = false;
 			Log.d(TAG, "AP SET:FALSE");
-
-
 		} catch (InvocationTargetException e) {
 			Log.e(TAG, e.getMessage(), e);
-			AndroidPreferences.apAvailable=false;
+			AndroidPreferences.apAvailable = false;
 			Log.d(TAG, "AP SET:FALSE");
-
-
 		}
+		// Log.d(TAG, "APPP 3: " + getWifiApState(manager) + " " + enable);
 
 	}
 
-	private void restoreWifiState(AndroidNetworkingFacade androidNetworkingFacade) {
+	private void restoreWifiState(
+			AndroidNetworkingFacade androidNetworkingFacade) {
 		WifiManager manager = (WifiManager) mContext
 				.getSystemService(Context.WIFI_SERVICE);
 		try {
 			// Disable emergency access point
 			setSoftAPEnabled(
 					androidNetworkingFacade.getWifiSoftAPConfiguration(), false);
-//			setSoftAPEnabled(fOriginalApConfiguration, false); // hack
-//			Method mSetWifiApConfiguration = manager.getClass().getMethod(
-//					"setWifiApConfiguration", WifiConfiguration.class);
-//			mSetWifiApConfiguration.invoke(manager, fOriginalApConfiguration);
+			setSoftAPEnabled(fOriginalApConfiguration, false); // hack
+			Method mSetWifiApConfiguration = manager.getClass().getMethod(
+					"setWifiApConfiguration", WifiConfiguration.class);
+			mSetWifiApConfiguration.invoke(manager, fOriginalApConfiguration);
+
+			if (fOriginalIsWifiEnabled)
+				manager.setWifiEnabled(true);
 		} catch (SecurityException e) {
 			Log.e(TAG, e.getMessage(), e);
 		} catch (IllegalArgumentException e) {
 			Log.e(TAG, e.getMessage(), e);
-//		} catch (IllegalAccessException e) {
-//			Log.e(TAG, e.getMessage(), e);
-//		} catch (InvocationTargetException e) {
-//			Log.e(TAG, e.getMessage(), e);
-//		} catch (NoSuchMethodException e) {
-//			Log.e(TAG, e.getMessage(), e);
+		} catch (IllegalAccessException e) {
+			Log.e(TAG, e.getMessage(), e);
+		} catch (InvocationTargetException e) {
+			Log.e(TAG, e.getMessage(), e);
+		} catch (NoSuchMethodException e) {
+			Log.e(TAG, e.getMessage(), e);
 		}
 
 		// Re-enable wi-fi if it was originally enabled

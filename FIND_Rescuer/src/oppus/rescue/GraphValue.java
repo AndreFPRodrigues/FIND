@@ -8,6 +8,11 @@ import android.util.Log;
 
 import com.jjoe64.graphview.GraphView.GraphViewData;
 
+/**
+ * Represents a graph value
+ * @author andre
+ *
+ */
 public class GraphValue {
 	long timestamp;
 	int value;

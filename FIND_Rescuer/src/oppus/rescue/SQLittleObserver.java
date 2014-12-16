@@ -9,6 +9,13 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.widget.Toast;
 
+/**
+ * Observers the FIND Service database When a message is added it receives an
+ * update adding the victim node to the map
+ * 
+ * @author andre
+ * 
+ */
 public class SQLittleObserver {
 	public static final String COL_ID = "_id";
 	public static final String COL_NODE = "nodeid";
@@ -31,7 +38,6 @@ public class SQLittleObserver {
 	private long lastToast;
 	private final static String LT = "RESCUE";
 
-
 	public SQLittleObserver(Context context, MapManager mm) {
 		this.context = context;
 		this.mm = mm;
@@ -43,8 +49,11 @@ public class SQLittleObserver {
 	}
 
 	// DEMO
-//	private boolean first = true;
+	// private boolean first = true;
 
+	/**
+	 * Retrived all stored nodes
+	 */
 	public void retriveAllNodes() {
 		// Retrieve student records
 		String URL = "content://find.service.net.diogomarques.wifioppish.MessagesProvider/received";
@@ -56,15 +65,15 @@ public class SQLittleObserver {
 		if (c.moveToFirst()) {
 			do {
 				i++;
-//				if (first) {
-//					String cluster1 = c.getString(c.getColumnIndex("cluster"));
-//					if (cluster1.contains("C1"))
-//						DemoClusters.mode = DemoClusters.C1;
-//					else
-//						DemoClusters.mode = DemoClusters.C2;
-//					MapManager.dm = new DemoClusters();
-//					first = false;
-//				}
+				// if (first) {
+				// String cluster1 = c.getString(c.getColumnIndex("cluster"));
+				// if (cluster1.contains("C1"))
+				// DemoClusters.mode = DemoClusters.C1;
+				// else
+				// DemoClusters.mode = DemoClusters.C2;
+				// MapManager.dm = new DemoClusters();
+				// first = false;
+				// }
 				double lat = c.getDouble(c.getColumnIndex("latitude"));
 				double lon = c.getDouble(c.getColumnIndex("longitude"));
 
@@ -73,39 +82,39 @@ public class SQLittleObserver {
 
 				String msg = c.getString(c.getColumnIndex("message"));
 				long time = c.getLong(c.getColumnIndex("timestamp"));
-				//long added = c.getLong(c.getColumnIndex("local_added"));
+				// long added = c.getLong(c.getColumnIndex("local_added"));
 				int steps = c.getInt(c.getColumnIndex("steps"));
 				int screen = c.getInt(c.getColumnIndex("screen"));
-				//int distance = c.getInt(c.getColumnIndex("distance"));
+				// int distance = c.getInt(c.getColumnIndex("distance"));
 				int battery = c.getInt(c.getColumnIndex("battery"));
-				//int id = c.getInt(c.getColumnIndex("_id"));
+				// int id = c.getInt(c.getColumnIndex("_id"));
 
-//				if (MapManager.demo) {
-//					String cluster = c.getString(c.getColumnIndex("cluster"));
-//					Log.d("RESCUE", "cluster:" + cluster);
-//					if (cluster.equals("C1VV2") || cluster.equals("C2VV2")) {
-//
-//						Log.d("RESCUE", "vv2:" + node);
-//
-//						MapManager.dm.addVV2(node, lat, lon, time, msg, steps,
-//								screen, distance, battery, true);
-//						return;
-//					} else if (cluster.equals("C1VV3")
-//							|| cluster.equals("C2VV3")) {
-//						Log.d("RESCUE", "vv3:" + node);
-//
-//						MapManager.dm.addVV3(node, lat, lon, time, msg, steps,
-//								screen, distance, battery, true);
-//						return;
-//					}
-//
-//				}
+				// if (MapManager.demo) {
+				// String cluster = c.getString(c.getColumnIndex("cluster"));
+				// Log.d("RESCUE", "cluster:" + cluster);
+				// if (cluster.equals("C1VV2") || cluster.equals("C2VV2")) {
+				//
+				// Log.d("RESCUE", "vv2:" + node);
+				//
+				// MapManager.dm.addVV2(node, lat, lon, time, msg, steps,
+				// screen, distance, battery, true);
+				// return;
+				// } else if (cluster.equals("C1VV3")
+				// || cluster.equals("C2VV3")) {
+				// Log.d("RESCUE", "vv3:" + node);
+				//
+				// MapManager.dm.addVV3(node, lat, lon, time, msg, steps,
+				// screen, distance, battery, true);
+				// return;
+				// }
+				//
+				// }
 
 				if (c.getInt(c.getColumnIndex("llconf")) < 1 && lat == 0
 						&& lon == 0) {
 
-				} else{
-					//set true for demo was false
+				} else {
+					// set true for demo was false
 					mm.addVictimMarker(node, lat, lon, msg, time, steps,
 							screen, 0, battery, safe, true);
 				}
@@ -114,6 +123,11 @@ public class SQLittleObserver {
 
 	}
 
+	/**
+	 * Insert rows into the find service permanent storage
+	 * 
+	 * @param nodes
+	 */
 	public static void insertRow(ContentValues[] nodes) {
 
 		Log.d("Node", "INSERT BULK");
@@ -132,21 +146,23 @@ public class SQLittleObserver {
 			this.onChange(selfChange, null);
 		}
 
+		/**
+		 * Updates the map when a victim node is addded to the database
+		 */
 		@Override
 		public void onChange(boolean selfChange, Uri uri) {
 
-		
 			String split = uri.getLastPathSegment();
-			
+
 			String URL1 = "content://find.service.net.diogomarques.wifioppish.MessagesProvider/received/"
 					+ split;
 			Uri msg1 = Uri.parse(URL1);
 
 			Cursor c = context.getContentResolver().query(msg1, null, null,
 					null, "_id");
-		//	Log.d(LT, "url:" +uri.toString());
-			//Log.d(LT, "last:" +split);
-			//Log.d(LT, "msg:" +msg1.toString());
+			// Log.d(LT, "url:" +uri.toString());
+			// Log.d(LT, "last:" +split);
+			// Log.d(LT, "msg:" +msg1.toString());
 
 			int i = -1;
 			if (c.moveToFirst()) {
@@ -174,27 +190,28 @@ public class SQLittleObserver {
 					int screen = c.getInt(c.getColumnIndex("screen"));
 					int distance = c.getInt(c.getColumnIndex("distance"));
 					int battery = c.getInt(c.getColumnIndex("battery"));
-					 
-//					if (MapManager.demo) {
-//						String cluster = c.getString(c
-//								.getColumnIndex("cluster"));
-//						if (cluster.equals("C1VV2") || cluster.equals("C2VV2")) {
-//							MapManager.dm.addVV2(node, lat, lon, time, msg,
-//									steps, screen, distance, battery, true);
-//							return;
-//						} else if (cluster.equals("C1VV3")
-//								|| cluster.equals("C2VV3")) {
-//
-//							MapManager.dm.addVV3(node, lat, lon, time, msg,
-//									steps, screen, distance, battery, true);
-//							return;
-//						}
-//						if(cluster.length()==0){
-//							Log.d("RESCUE", "local node added to log");
-//							DemoClusters.addToLog(node + " " + lat +" " +lon+" "+ + time + " " + steps + " " + screen + " " +msg );
-//							
-//						}
-//					}
+
+					// if (MapManager.demo) {
+					// String cluster = c.getString(c
+					// .getColumnIndex("cluster"));
+					// if (cluster.equals("C1VV2") || cluster.equals("C2VV2")) {
+					// MapManager.dm.addVV2(node, lat, lon, time, msg,
+					// steps, screen, distance, battery, true);
+					// return;
+					// } else if (cluster.equals("C1VV3")
+					// || cluster.equals("C2VV3")) {
+					//
+					// MapManager.dm.addVV3(node, lat, lon, time, msg,
+					// steps, screen, distance, battery, true);
+					// return;
+					// }
+					// if(cluster.length()==0){
+					// Log.d("RESCUE", "local node added to log");
+					// DemoClusters.addToLog(node + " " + lat +" " +lon+" "+ +
+					// time + " " + steps + " " + screen + " " +msg );
+					//
+					// }
+					// }
 					mm.addVictimMarker(node, lat, lon, msg, time, steps,
 							screen, 0, battery, safe, true);
 

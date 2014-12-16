@@ -14,6 +14,11 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+/**
+ * Side menu for additional features
+ * @author andre
+ *
+ */
 public class NavDrawerListAdapter extends BaseAdapter {
 
 	private Context context;

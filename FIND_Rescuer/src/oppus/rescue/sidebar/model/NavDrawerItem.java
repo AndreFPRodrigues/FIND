@@ -1,5 +1,10 @@
 package oppus.rescue.sidebar.model;
 
+/**
+ * Side menu item
+ * @author andre
+ *
+ */
 public class NavDrawerItem {
 	
 	private String title;

@@ -34,8 +34,7 @@
             android:gravity="center"
             android:text="@string/noSimulations"
             android:textSize="15dp"
-            android:textStyle="bold"
-            android:visibility="gone" />
+            android:textStyle="bold" />
     </LinearLayout>
 
     <LinearLayout
@@ -51,6 +50,8 @@
             android:enabled="false"
             android:onClick="associate"
             android:text="@string/noSimulations" />
+        <!-- android:visibility="gone" -->
+
 
         <!--
             <Button
@@ -69,12 +70,14 @@
             android:layout_marginTop="25dp"
             android:text="@string/associationPreferences"
             android:textSize="15dp"
-            android:textStyle="bold" />
+            android:textStyle="bold" 
+            android:visibility="gone" />
 
         <RadioGroup
             android:id="@+id/radioGroup1"
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content" >
+            android:layout_height="wrap_content"
+            android:visibility="gone" >
 
             <RadioButton
                 android:id="@+id/manual"
@@ -107,6 +110,9 @@
             android:enabled="true"
             android:onClick="activateService"
             android:text="Start service" />
+        <!-- android:visibility="gone" -->
+
+
         <!--
               <CheckBox
             android:id="@+id/checkBox1"

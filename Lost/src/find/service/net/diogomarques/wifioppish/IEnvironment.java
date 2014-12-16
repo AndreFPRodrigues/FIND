@@ -4,6 +4,8 @@ import java.util.List;
 
 import android.content.Context;
 
+import find.service.net.diogomarques.wifioppish.INetworkingFacade.IListener;
+import find.service.net.diogomarques.wifioppish.INetworkingFacade.OnReceiveListener;
 import find.service.net.diogomarques.wifioppish.networking.Message;
 import find.service.net.diogomarques.wifioppish.sensors.SensorGroup;
 
@@ -207,4 +209,10 @@ public interface IEnvironment {
 	public abstract SensorGroup getSensorGroup();
 
 	Context getAndroidContext();
+	
+	/**
+	 * Sets the current state listener 
+	 * @param listener
+	 */
+	public void currentListener(IListener listener);
 }

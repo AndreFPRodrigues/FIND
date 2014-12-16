@@ -8,7 +8,8 @@
     <!-- settings default values -->
     <string name="value_t_beac">10000</string>
     <string name="value_t_pro">40000</string>
-    <string name="value_t_scan">300000</string>
+    <!-- was 300000 -->
+    <string name="value_t_scan">100000</string>
     <string name="value_t_con">40000</string>
     <string name="value_t_int">40000</string>
     <string name="value_t_freq">2000</string>

@@ -1,5 +1,11 @@
 package oppus.rescue;
 
+/**
+ * Find service structure of a message
+ * Used to create simulated messages and add them to the FIND Service
+ * @author andre
+ *
+ */
 public class VictimNodeDemo {
 	String node;
 	double lat;

@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
@@ -110,20 +111,26 @@ public class ScheduleService extends BroadcastReceiver {
 		}
 
 		public void run() {
-			double[] value = (double[]) ls.getCurrentValue();
-			if (value[0] != 0) {
-				if (!LocationFunctions
-						.isInLocation(value, lat, lon, lat2, lon2)) {
-					stop(c);
-					Log.d(TAG, "Not in location");
+			new AsyncTask<Void, Void, Void>() {
+				@Override
+				protected Void doInBackground(Void... params1) {
+					double[] value = (double[]) ls.getCurrentValue();
+					if (value[0] != 0) {
+						if (!LocationFunctions
+								.isInLocation(value, lat, lon, lat2, lon2)) {
+							stop(c);
+							Log.d(TAG, "Not in location");
+						}
+						Log.d(TAG, "In location");
+
+					} else {
+						Log.d(TAG, "Undefined location");
+						isInSimulationLocation(lat, lon, lat2, lon2);
+
+					}
+					return null;
 				}
-				Log.d(TAG, "In location");
-
-			} else {
-				Log.d(TAG, "Undefined location");
-				isInSimulationLocation(lat, lon, lat2, lon2);
-
-			}
+			}.execute(null, null, null);
 		}
 	}
 	
@@ -182,7 +189,7 @@ public class ScheduleService extends BroadcastReceiver {
 		
 		//if the alert is a simulation it has a 
 		//duration field not null and therefor we set a stop alarm
-		if(isLong(duration)){
+		if(isLong(duration) && Long.parseLong(duration)!=-1){
 			setStopAlarm(date, duration, c);
 		}
 		
@@ -241,7 +248,7 @@ public class ScheduleService extends BroadcastReceiver {
 		alarmManager.cancel(startPIntent);
 		
 		Log.d(TAG, "canceling stop alarm");
-		Intent intentStopAlarm = new Intent("startAlarm");
+		Intent intentStopAlarm = new Intent("stopAlarm");
 		PendingIntent stopPIntent = PendingIntent.getBroadcast(c, 0,
 				intentStopAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
 

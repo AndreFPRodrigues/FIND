@@ -20,8 +20,8 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.app.ActionBarDrawerToggle;
-import android.support.v4.widget.DrawerLayout; 
-import android.util.Log;  
+import android.support.v4.widget.DrawerLayout;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -31,7 +31,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.mapapp.tileManagement.DownloadFile;
 
-;
+/**
+ * Main activity starts map and side menu
+ * 
+ * @author andre
+ * 
+ */
 
 public class MainActivity extends Activity {
 	private final static String LT = "RESCUE";
@@ -58,28 +63,24 @@ public class MainActivity extends Activity {
 
 	private final int SETTINGS = 3;
 	private final int STATS = 4;
-	private static Handler timingService;
-	private static boolean notDestroyed=true;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		View decorView = getWindow().getDecorView();
+
 		// Hide the status bar.
 		int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
 		decorView.setSystemUiVisibility(uiOptions);
-		timingService = new Handler();
 
+		// download file database
 		File bd = new File(Environment.getExternalStorageDirectory().toString()
 				+ "/mapapp/world.sqlitedb");
 		DownloadFile d;
 		if (!bd.exists()) {
-
 			Log.d(LT, "downloading db");
 			d = new DownloadFile(this);
-		} else {
-			//startTimerForService();
 		}
 
 		// Remember that you should never show the action bar if the
@@ -96,15 +97,15 @@ public class MainActivity extends Activity {
 		navMenuIcons = getResources()
 				.obtainTypedArray(R.array.nav_drawer_icons);
 
-		mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout); 
+		mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
 		mDrawerList = (ListView) findViewById(R.id.list_slidermenu);
 
 		navDrawerItems = new ArrayList<NavDrawerItem>();
 
 		// adding nav drawer items to array
 		// Home
-		//navDrawerItems.add(new NavDrawerItem(navMenuTitles[0], navMenuIcons
-		//		.getResourceId(0, -1)));
+		// navDrawerItems.add(new NavDrawerItem(navMenuTitles[0], navMenuIcons
+		// .getResourceId(0, -1)));
 		// navDrawerItems.add(new NavDrawerItem(navMenuTitles[1], navMenuIcons
 		// .getResourceId(1, 1)));
 		// navDrawerItems.add(new NavDrawerItem(navMenuTitles[2], navMenuIcons
@@ -147,12 +148,13 @@ public class MainActivity extends Activity {
 				invalidateOptionsMenu();
 			}
 		};
+		
 		mDrawerLayout.setDrawerListener(mDrawerToggle);
-
 		if (savedInstanceState == null) {
+			
 			// on first time display view for first nav item
+			//Load map fragment
 			fragment = new MapFragmentControl();
-
 			if (fragment != null) {
 				FragmentManager fragmentManager = getFragmentManager();
 				fragmentManager.beginTransaction()
@@ -165,24 +167,10 @@ public class MainActivity extends Activity {
 		}
 	}
 
-	public void startTimerForService() {
-		Log.d(LT, "starting timer for service");
 
-		timingService.postDelayed(new Runnable() {
-			public void run() {
-				Log.d(LT, "service");
-				if (notDestroyed) {
-					Intent intent = new Intent(
-							"find.service.net.diogomarques.wifioppish.service.LOSTService.START_SERVICE");
-					startService(intent);
-				}
-			}
-		}, 20000);
-	}
 
 	@Override
 	protected void onDestroy() {
-		notDestroyed=false;
 		super.onDestroy();
 
 	}
@@ -286,34 +274,29 @@ public class MainActivity extends Activity {
 		// Pass any configuration change to the drawer toggls
 		mDrawerToggle.onConfigurationChanged(newConfig);
 	}
-
-	/*public void next(View v) {
-		fragment.next();
-	}
-
-	public void back(View v) {
-		fragment.back();
-	}*/
-
+	
+	//handles screen graph click
 	public void screenGraph(View v) {
 		fragment.screenGraph();
 	}
-
+	
+	//handled distance graph click
 	public void distanceGraph(View v) {
-		fragment.distanceGraph(); 
+		fragment.distanceGraph();
 
 	}
-
+	//handles microGraph graph click
 	public void microGraph(View v) {
 		fragment.microGraph();
 	}
-
+	
+	//handles close infowindow click  
 	public void hideInfo(View v) {
 		fragment.hideInfo();
 	}
 
 	/**
-	 * DEMO
+	 * DEMO - user study with save victim function
 	 */
 	// private final int interval = 1000; // 1 Second
 	// private int time = 120;

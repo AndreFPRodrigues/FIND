@@ -3,19 +3,15 @@ package oppus.rescue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import oppus.rescue.Victim.VictimNode;
-
-import android.util.Log;
-import android.util.SparseArray;
-
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
+/**
+ * Class that represents a victim
+ * 
+ * @author andre
+ *
+ */
 public class Victim {
 
 	private ArrayList<VictimNode> points;

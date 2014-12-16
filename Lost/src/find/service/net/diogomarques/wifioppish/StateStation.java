@@ -41,7 +41,7 @@ public class StateStation extends AState {
 		
 		// send messages for the network
 		int period = environment.getPreferences().getSendPeriod(); 
-		
+		environment.currentListener(null);
 		new CountDownTimer(environment.getPreferences().getTCon(), period) {
 			
 			@Override
@@ -77,6 +77,12 @@ public class StateStation extends AState {
 					public void onMessageSent(MessageGroup msgs) {
 						for(Message m : msgs)
 							onMessageSent(m);
+					}
+
+					@Override
+					public void forceTransition() {
+						onFinish();
+						
 					}
 				};
 				

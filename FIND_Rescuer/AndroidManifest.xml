@@ -58,9 +58,9 @@
             android:value="@integer/google_play_services_version" />
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyDbBhS55SZzN6OBoGSgqwIQzYQYAnJWXAU" />
+            android:value="AIzaSyA5-RnvbHXIIgJjjjZah4MykxvV9HV7i80" />
+        <!-- android:value="AIzaSyDbBhS55SZzN6OBoGSgqwIQzYQYAnJWXAU" /> -->
 
-      
         <activity
             android:name="oppus.rescue.MainActivity"
             android:icon="@drawable/logo"
@@ -71,8 +71,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-       
     </application>
 
 </manifest>

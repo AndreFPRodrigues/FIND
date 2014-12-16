@@ -429,7 +429,7 @@ public class DemoActivity extends Activity {
 		// minutes and we stop the service we unregister
 		// todo verify date
 
-		if (date == null
+		if (date == null||date==""
 				|| DateFunctions.timeToDate(date.replace("-", "/")) < DISASSOCIATE_THRESHOLD) {
 			Simulation.regSimulationContentProvider("", "", "", "", context);
 		}
@@ -529,8 +529,8 @@ public class DemoActivity extends Activity {
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-	    MenuInflater inflater = getMenuInflater();
-	    inflater.inflate(R.menu.downloadmenu, menu);
+	    //MenuInflater inflater = getMenuInflater();
+	    //inflater.inflate(R.menu.downloadmenu, menu);
 	    return true;
 	}
 	
@@ -556,7 +556,6 @@ public class DemoActivity extends Activity {
 	}
 
 	private void showGPSDisabledAlertToUser() {
-		// TODO Auto-generated method stub
 		AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 		alertDialogBuilder
 				.setMessage(

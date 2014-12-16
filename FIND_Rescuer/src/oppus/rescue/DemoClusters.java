@@ -14,14 +14,21 @@ import com.google.android.gms.maps.model.LatLng;
 
 import oppus.rescue.Victim.VictimNode;
 
+/**
+ * Class created for a user study It adds points/messages to the find service
+ * when certain areas are reached in order to simulate a real scenario
+ * 
+ * @author andre
+ * 
+ */
 public class DemoClusters {
-	static ArrayList<VictimNodeDemo> VV2; 
+	static ArrayList<VictimNodeDemo> VV2;
 	static ArrayList<VictimNodeDemo> VV3;
 
 	private static ArrayList<String> log;
 
 	static Location vm;
-	static Location vv1; 
+	static Location vv1;
 	static Location vv2;
 	static Location vv3;
 	static Location update_vv3;

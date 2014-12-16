@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 
 import find.service.net.diogomarques.wifioppish.IEnvironment.State;
+import find.service.net.diogomarques.wifioppish.INetworkingFacade.IListener;
+import find.service.net.diogomarques.wifioppish.INetworkingFacade.OnReceiveListener;
 import find.service.net.diogomarques.wifioppish.networking.Message;
 import find.service.net.diogomarques.wifioppish.sensors.BatterySensor;
 import find.service.net.diogomarques.wifioppish.sensors.LocationSensor;
@@ -88,6 +90,8 @@ public class AndroidEnvironment implements IEnvironment {
 
 	// singleton
 	private static AndroidEnvironment instance;
+
+	private static IListener currentListener;
 
 	/**
 	 * Convenience constructor for {@link #createInstance(Context, Handler)}.
@@ -200,15 +204,13 @@ public class AndroidEnvironment implements IEnvironment {
 
 	@Override
 	public void gotoState(State state) {
-		//LOSTService.saveLogCat("state");
-		
-		if (nextState != State.Stopped || state == State.InternetConn) {
+
+		if ((nextState != State.Stopped && !LOSTService.toStop)
+				|| state == State.InternetConn) {
 			semNextState.release();
 			nextState = state;
-			// add auto-message to be accumulated
-			Message autoMessage = createTextMessage("");
-			pushMessageToQueue(autoMessage);
-		}else{
+		
+		} else {
 			semNextState.release();
 			nextState = State.Stopped;
 		}
@@ -362,10 +364,14 @@ public class AndroidEnvironment implements IEnvironment {
 
 	@Override
 	public double[] getMyLocation() {
-		double[] values = (double[]) sensorGroup.getSensor(
-				SensorGroupKey.Location).getCurrentValue();
+		LocationSensor sensor = (LocationSensor) sensorGroup
+				.getSensor(SensorGroupKey.Location);
+		if (sensor != null) {
+			return (double[]) sensor.getCurrentValue();
+		} else {
+			return new double[] { 0, 0,0 }; 
+		}
 
-		return values;
 	}
 
 	@Override
@@ -474,7 +480,7 @@ public class AndroidEnvironment implements IEnvironment {
 						+ uriRec.toString());
 		}
 
-		// message to be sent later 
+		// message to be sent later
 		cv.remove(MessagesProvider.COL_ORIGIN);
 		cv.put(MessagesProvider.COL_STATUS, MessagesProvider.OUT_WAIT);
 		Uri uri = context.getContentResolver().insert(
@@ -487,13 +493,13 @@ public class AndroidEnvironment implements IEnvironment {
 
 	@Override
 	public void stopStateLoop() {
-		
-
-		
 
 		// disable sensors and remote hotspot feature
+		if (currentListener != null) {
+			currentListener.forceTransition();
+		}
 		sensorGroup.removeAllSensors(true);
-		mNetworkingFacade.stopAccessPoint();
+		 mNetworkingFacade.stopAccessPoint();
 	}
 
 	/**
@@ -562,6 +568,12 @@ public class AndroidEnvironment implements IEnvironment {
 						"", null);
 			}
 		}
+	}
+
+	@Override
+	public void currentListener(IListener listener) {
+		currentListener = listener;
+
 	}
 
 }

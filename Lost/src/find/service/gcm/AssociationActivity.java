@@ -40,12 +40,18 @@ public class AssociationActivity extends Activity {
 		final double lonS = intent.getExtras().getDouble("lonS");
 		final double latE = intent.getExtras().getDouble("latE");
 		final double lonE = intent.getExtras().getDouble("lonE");
-		
+		//TODO only convert duration once
+		long dur =Long.parseLong(duration); 
+		Log.d(TAG,"Duration:" +duration );
 		Simulation.preDownloadTiles(latS, lonS, latE, lonE, c);
 		ScheduleService.setStartAlarm(date,duration, c);
 		Intent disassociate = new Intent(this, AssociationActivity.class);
 		disassociate.setAction("disassociate");
-		Notifications.generateNotification(c, "Associate to " + name,
+		String isSimulation ="Simulation ";
+		if(dur==-1){
+			isSimulation="ALERT ";
+		}
+		Notifications.generateNotification(c, isSimulation + name,
 				"Click to disassociate.", disassociate);
 		Simulation.regSimulationContentProvider(name, date, duration, location,
 				c);

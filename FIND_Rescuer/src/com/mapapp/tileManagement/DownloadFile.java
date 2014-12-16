@@ -17,10 +17,13 @@ import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.TextView; 
 
+/**
+ * Allows to download the file that contains our tile database
+ * @author andre
+ *
+ */
 public class DownloadFile { 
 	private final static String LT = "RESCUE";
-
-
 	int downloadedSize = 0;
 	int totalSize = 0;
 	String dwnload_file_path = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/world.sqlitedb";
@@ -76,7 +79,6 @@ public class DownloadFile {
 			fileOutput.close();
 			Log.d(LT, "finito db");
 
-			//ma.startTimerForService();
 			return ;
 
 		} catch (final MalformedURLException e) {

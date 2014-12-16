@@ -65,6 +65,11 @@ import com.jjoe64.graphview.GraphViewStyle.GridStyle;
 import com.jjoe64.graphview.LineGraphView;
 import com.mapapp.tileManagement.TilesProvider;
 
+/**
+ * Controls the map 
+ * @author andre
+ *
+ */
 public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 
 	private GoogleMap googleMap;
@@ -127,13 +132,14 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 	GraphViewData[] distance;
 
 	// demo
-	// public static boolean demo = true;
+	 public static boolean demo = false;
 	// public static DemoClusters dm;
 	private Location location = null;
 	private final int RADIUS = 1;
 	private View rootview;
 	// private int lastGraph = MICRO;
 
+	//webservice rest requests
 	private String uri_new = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims";
 	private String uri_timeStamp = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims/mintimestamp/";
 	private String uri_simu = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims/rescue/";
@@ -163,7 +169,7 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 		tempMarkers = new Stack<Marker>();
 		filepath = Environment.getExternalStorageDirectory().toString()
 				+ "/oppus/victims";
-
+		
 		startTileProvider();
 		setInfoWindow();
 
@@ -203,13 +209,17 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 	}
 
 	private boolean markOffLineVictims() {
-
 		boolean result = false;
 		lastLocalUpdate = System.currentTimeMillis();
 		return result;
-
 	}
 
+	/**
+	 * Add rows retrived from the webservice to the FIND Service
+	 * 
+	 * @param victims json array
+	 * @return
+	 */
 	private boolean markVictims(String victims) {
 		boolean result = false;
 		try {
@@ -287,6 +297,10 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 		return "";
 	}
 
+	/**
+	 * Makes a request to the webservice for all the points in a radius around our location
+	 * and since the last update
+	 */
 	void updateVictimsWebService() {
 		StringBuilder builder = new StringBuilder();
 		HttpClient client = new DefaultHttpClient();

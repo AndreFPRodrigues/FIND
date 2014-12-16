@@ -58,6 +58,7 @@ public class StateInternetConn extends AState {
 
 		context = c;
 		environment.deliverMessage("entered Internet connected state");
+		environment.currentListener(null);
 
 		long startTime = new Date().getTime();
 		if (LOSTService.toStop) {
@@ -78,7 +79,7 @@ public class StateInternetConn extends AState {
 
 			// get messages from send queue and create auto-message
 			List<Message> messages = environment.fetchMessagesFromQueue();
-			messages.add(environment.createTextMessage(""));
+			//messages.add(environment.createTextMessage(""));
 			JSONArray jsonArray = new JSONArray();
 
 			for (Message m : messages) {
@@ -123,7 +124,7 @@ public class StateInternetConn extends AState {
 							.update(sentUri, cv, null, null);
 				}
 
-				environment.clearQueue();
+				//environment.clearQueue();
 			}
 
 		} catch (IOException e) {

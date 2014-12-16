@@ -13,9 +13,17 @@ import find.service.net.diogomarques.wifioppish.networking.MessageGroup;
 public interface INetworkingFacade {
 
 	/**
+	 * Listener interface
+	 */
+
+	public static interface IListener {
+		public void forceTransition();
+	}
+
+	/**
 	 * Listener for message sending events.
 	 */
-	public static interface OnSendListener {
+	public static interface OnSendListener extends IListener {
 		/**
 		 * Callback to be invoked when a message is successfully sent.
 		 * 
@@ -33,12 +41,12 @@ public interface INetworkingFacade {
 		public void onSendError(String errorMsg);
 
 		/**
-		 * Callback to be invoked when a {@link MessageGroup} is successfully sent. 
-		 * It invokes {@link #onMessageSent(Message)} for each {@link Message} inside 
-		 * the MessageGroup.
+		 * Callback to be invoked when a {@link MessageGroup} is successfully
+		 * sent. It invokes {@link #onMessageSent(Message)} for each
+		 * {@link Message} inside the MessageGroup.
 		 * 
 		 * @param msgs
-		 * 				the sent MessageGroup
+		 *            the sent MessageGroup
 		 */
 		public void onMessageSent(MessageGroup msgs);
 	}
@@ -46,7 +54,7 @@ public interface INetworkingFacade {
 	/**
 	 * Listener for message receiving events.
 	 */
-	public static interface OnReceiveListener {
+	public static interface OnReceiveListener extends IListener{
 		/**
 		 * Callback to be invoked when receiving times out
 		 * 
@@ -63,12 +71,12 @@ public interface INetworkingFacade {
 		public void onMessageReceived(Message m);
 
 		/**
-		 * Callback to be invoked when a {@link MessageGroup} is successfully received. 
-		 * It invokes {@link #onMessageReceived(Message)} for each {@link Message} inside 
-		 * the MessageGroup.
+		 * Callback to be invoked when a {@link MessageGroup} is successfully
+		 * received. It invokes {@link #onMessageReceived(Message)} for each
+		 * {@link Message} inside the MessageGroup.
 		 * 
 		 * @param msgs
-		 * 				the received MessageGroup
+		 *            the received MessageGroup
 		 */
 		void onMessageReceived(MessageGroup msgs);
 	}
@@ -76,7 +84,7 @@ public interface INetworkingFacade {
 	/**
 	 * Listener for access point scanning events.
 	 */
-	public static interface OnAccessPointScanListener {
+	public static interface OnAccessPointScanListener extends IListener {
 		/**
 		 * Callback to be invoked when scan times out without finding an
 		 * appropriate access point.
@@ -87,7 +95,7 @@ public interface INetworkingFacade {
 		 * Callback to be invoked when connection to AP is successful.
 		 * 
 		 * @param bSSID
-		 * 				BSSID (MAC address) of the remote AP
+		 *            BSSID (MAC address) of the remote AP
 		 */
 		public void onAPConnection(String bSSID);
 	}
@@ -111,7 +119,7 @@ public interface INetworkingFacade {
 	 *            a listener for send-related events.
 	 */
 	public void send(Message msg, OnSendListener listener);
-	
+
 	/**
 	 * Send a {@link MessageGroup} to a shared channel.
 	 * 
@@ -154,11 +162,11 @@ public interface INetworkingFacade {
 	 * 
 	 */
 	void scanForAP(int timeout, OnAccessPointScanListener listener);
-	
+
 	/**
 	 * Listener for access point scanning events.
 	 */
-	public static interface OnInternetConnection {
+	public static interface OnInternetConnection extends IListener{
 		/**
 		 * Callback to be invoked when scan times out without finding an
 		 * appropriate access point.
@@ -171,7 +179,7 @@ public interface INetworkingFacade {
 		 */
 		public void onInternetConnection();
 	}
-	
+
 	/**
 	 * Scan for internet connection until the timeout is reached.
 	 * 

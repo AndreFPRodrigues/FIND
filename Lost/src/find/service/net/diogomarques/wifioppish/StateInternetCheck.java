@@ -25,6 +25,7 @@ public class StateInternetCheck extends AState {
 
 		final INetworkingFacade networking = environment.getNetworkingFacade();
 		environment.deliverMessage("entered Internet state");
+		environment.currentListener(null);
 
 		networking.scanForInternet(timeout,
 				new INetworkingFacade.OnInternetConnection() {
@@ -50,6 +51,10 @@ public class StateInternetCheck extends AState {
 								.deliverMessage("connected to the internet!");
 
 						environment.gotoState(State.InternetConn);
+					}
+
+					@Override
+					public void forceTransition() {
 					}
 				});
 

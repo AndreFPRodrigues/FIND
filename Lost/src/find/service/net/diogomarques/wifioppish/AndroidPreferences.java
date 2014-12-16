@@ -99,7 +99,8 @@ public class AndroidPreferences implements IDomainPreferences {
 				.getDefaultSharedPreferences(mContext);
 		String key = mContext.getString(resId);
 		int minTime = Integer.parseInt(prefs.getString(key, null));
-		int dif = 3 * minTime - minTime;
+		//TODO was 2* minTime
+		int dif = minTime ;
 		return (int) (new Random().nextDouble() * dif + minTime);
 	}
 

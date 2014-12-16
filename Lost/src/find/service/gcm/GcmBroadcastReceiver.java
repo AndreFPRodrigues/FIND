@@ -15,33 +15,15 @@
  */
 package find.service.gcm;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import com.google.android.gms.maps.model.LatLng;
-import find.service.net.diogomarques.wifioppish.MessagesProvider;
 import find.service.net.diogomarques.wifioppish.NodeIdentification;
 import find.service.net.diogomarques.wifioppish.sensors.LocationSensor;
 import find.service.net.diogomarques.wifioppish.service.LOSTService;
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.location.Location;
-import android.os.AsyncTask;
-import android.os.BatteryManager;
 import android.os.Handler;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
@@ -92,7 +74,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			return;
 		}*/
 
-		/*
+		
 		// get data from push notification
 		type = intent.getExtras().getString("type");
 		Log.d(TAG, "Type:" + type);
@@ -105,15 +87,14 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 				Log.d(TAG, "Stopping service");
 				Notifications
 						.generateNotification(c, "FIND Service","Terminating the service", null);
-
+				ScheduleService.cancelAlarm(c);
 				Simulation.regSimulationContentProvider("","","","",c);
 				LOSTService.stop(c);
 				return;
 			}
 		} catch (NumberFormatException e) {
 			Log.d(TAG, "Converted type is not a number");
-
-		}*/
+		}
 
 		Log.d(TAG, "Checking received new notification");
 		// received new simulation notification, getting parameters
