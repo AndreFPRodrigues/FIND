@@ -49,8 +49,8 @@
             android:layout_height="wrap_content"
             android:enabled="false"
             android:onClick="associate"
-            android:text="@string/noSimulations" />
-        <!-- android:visibility="gone" -->
+            android:text="@string/noSimulations" 
+       android:visibility="gone" />
 
 
         <!--
@@ -109,8 +109,8 @@
             android:layout_height="wrap_content"
             android:enabled="true"
             android:onClick="activateService"
-            android:text="Start service" />
-        <!-- android:visibility="gone" -->
+            android:text="Start service" 
+      android:visibility="gone"/>
 
 
         <!--

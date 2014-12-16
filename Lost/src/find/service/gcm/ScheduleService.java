@@ -37,11 +37,11 @@ public class ScheduleService extends BroadcastReceiver {
 			
 		}
 		
-		Intent openMainActivity= new Intent(context, DemoActivity.class);
+		/*Intent openMainActivity= new Intent(context, DemoActivity.class);
         openMainActivity.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
         openMainActivity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-        context.startActivity(openMainActivity);
+        context.startActivity(openMainActivity);*/
 	}
 	/**
 	 * Handles the stop service alarm
@@ -190,14 +190,15 @@ public class ScheduleService extends BroadcastReceiver {
 		//if the alert is a simulation it has a 
 		//duration field not null and therefor we set a stop alarm
 		if(isLong(duration) && Long.parseLong(duration)!=-1){
+			
 			setStopAlarm(date, duration, c);
 		}
 		
 			Long time = new GregorianCalendar().getTimeInMillis() + timeleft;
-			Log.d(TAG, "setting start alarm " + timeleft + " date:" + date);
+			Log.d(TAG, "setting start alarm to alarm " + timeleft + " date:" + date + " duration:" + duration + " " + time);
 			Intent intentAlarm = new Intent("startAlarm");
 			PendingIntent startPIntent = PendingIntent.getBroadcast(c, 0,
-					intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
+					intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT); 
 			
 			// create the object
 			AlarmManager alarmManager = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
@@ -218,16 +219,17 @@ public class ScheduleService extends BroadcastReceiver {
 		
 		}
 			Long time = new GregorianCalendar().getTimeInMillis() + timeleft;
-			Log.d(TAG, "setting stop alarm to alarm " + timeleft + " date:" + date + " duration:" + duration);
+			Log.d(TAG, "setting stop alarm to alarm " + timeleft + " date:" + date + " duration:" + duration + " " + time);
 			Intent intentAlarm = new Intent("stopAlarm");
-			PendingIntent startPIntent = PendingIntent.getBroadcast(c, 0,
+			PendingIntent startPIntent = PendingIntent.getBroadcast(c, 1231,
 					intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
-			
 			// create the object
 			AlarmManager alarmManager = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
 
 			// set the alarm for particular time
 			alarmManager.set(AlarmManager.RTC_WAKEUP, time, startPIntent);
+			
+			
 			/*Toast.makeText(c, "Service will automatically start at " + date,
 			Toast.LENGTH_LONG).show();*/
 	}
@@ -249,7 +251,7 @@ public class ScheduleService extends BroadcastReceiver {
 		
 		Log.d(TAG, "canceling stop alarm");
 		Intent intentStopAlarm = new Intent("stopAlarm");
-		PendingIntent stopPIntent = PendingIntent.getBroadcast(c, 0,
+		PendingIntent stopPIntent = PendingIntent.getBroadcast(c, 1231,
 				intentStopAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		// stop alarm

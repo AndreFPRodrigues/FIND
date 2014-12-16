@@ -254,21 +254,21 @@ public class TilesProvider implements DownloadTaskFinishedCallback,
 	public void downloadTilesInBound(final double minLat, final double minLong,
 			final double maxLat, final double maxLong, final int minZoom,
 			final int maxZoom, Context c) {
-		final NotificationManager mNotifyManager = (NotificationManager) c
+		/*final NotificationManager mNotifyManager = (NotificationManager) c
 				.getSystemService(c.NOTIFICATION_SERVICE);
 		final android.support.v4.app.NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(
 				c);
 		mBuilder.setContentTitle("Downloading Map")
 				.setContentText("Download in progress")
-				.setSmallIcon(R.drawable.service_logo);
+				.setSmallIcon(R.drawable.service_logo);*/
 		// Start a lengthy operation in a background thread
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				double incr=0;
-				mBuilder.setProgress(100, (int)incr, false);
+				//mBuilder.setProgress(100, (int)incr, false);
 				// Displays the progress bar for the first time.
-				mNotifyManager.notify(1, mBuilder.build());
+				//mNotifyManager.notify(1, mBuilder.build());
 				int progress_aux=0;
 				for (int zoom = minZoom; zoom <= maxZoom; zoom++) {
 					
@@ -285,9 +285,9 @@ public class TilesProvider implements DownloadTaskFinishedCallback,
 						if(zoom==19){
 							if(progress_aux==0){
 								incr+=5;
-								mBuilder.setProgress(100, (int)incr, false);
+								//mBuilder.setProgress(100, (int)incr, false);
 								// Displays the progress bar for the first time.
-								mNotifyManager.notify(1, mBuilder.build());
+								//mNotifyManager.notify(1, mBuilder.build());
 								progress_aux = (max_ty-min_ty)/20;
 							}
 							progress_aux--;	
@@ -298,10 +298,10 @@ public class TilesProvider implements DownloadTaskFinishedCallback,
 				}
 			
 				// When the loop is finished, updates the notification
-				mBuilder.setContentText("Download complete")
+				//mBuilder.setContentText("Download complete")
 				// Removes the progress bar
-						.setProgress(0, 0, false);
-				mNotifyManager.notify(1, mBuilder.build());
+				//		.setProgress(0, 0, false);
+				//mNotifyManager.notify(1, mBuilder.build());
 			}
 		}
 		// Starts the thread by calling the run() method in its Runnable

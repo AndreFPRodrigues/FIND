@@ -207,7 +207,7 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 					Log.w("", "Internet timeout");
 					listener.onScanTimeout();
 				} else {
-					Log.w("", "Internet tick "+delay+ totaltime );
+					Log.w("", "Internet tick "+delay+" " + totaltime );
 
 					long totalTime = delay + totaltime;
 					if (isNetworkAvailable()) {

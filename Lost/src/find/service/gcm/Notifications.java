@@ -10,7 +10,7 @@ import find.service.R;
 
 public class Notifications {
 	public static  void generateNotification(Context context, String title, String message, Intent intent) {
-		int icon = R.drawable.service_logo;
+		/*int icon = R.drawable.service_logo;
 		if(intent==null){
 			Log.d("gcm", "intent e null");
 			intent= new Intent(context, DemoActivity.class);
@@ -25,6 +25,6 @@ public class Notifications {
 	    notifyDetails.defaults |= Notification.DEFAULT_SOUND;
 		// Vibrate if vibrate is enabled
 	    notifyDetails.defaults |= Notification.DEFAULT_VIBRATE;
-	    notificationManager.notify(0, notifyDetails);  
+	    notificationManager.notify(0, notifyDetails);  */
 	}
 }
