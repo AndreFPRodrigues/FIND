@@ -17,7 +17,7 @@ import android.preference.PreferenceManager;
 public class AndroidPreferences implements IDomainPreferences {
 
 	// FIXME switch before deployment
-	public static boolean DEBUG = true; 
+	public static boolean DEBUG = false; 
 	
 	public static boolean apAvailable = true; 
 
@@ -128,7 +128,7 @@ public class AndroidPreferences implements IDomainPreferences {
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(mContext);
 		boolean internetState = prefs.getBoolean("internet",true);
-		return internetState;
+		return false;
 	}
 
 	@Override

@@ -1,6 +1,5 @@
 package find.service.gcm;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,9 +31,7 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
 public class SplashScreen extends Activity {
-
 
 	public static final String EXTRA_MESSAGE = "message";
 	public static final String PROPERTY_REG_ID = "registration_id";
@@ -71,21 +68,21 @@ public class SplashScreen extends Activity {
 		WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		WifiInfo info = manager.getConnectionInfo();
 
-		//gets mac_address (user identification)
-		address = info.getMacAddress();  
+		// gets mac_address (user identification)
+		address = info.getMacAddress();
 		address = NodeIdentification.getNodeId(address);
-		
-		AccountManager accountM= (AccountManager) context 
-				.getSystemService(context.ACCOUNT_SERVICE);
-		Account[] list =  accountM.getAccountsByType("com.google");
-		if(list.length>1)
-		account =((list[0].name.split("@"))[0]);
-		else
-			account="noID";
-		//check if registered
-		if(checkIfRegistered()) {
 
-			//if registered send again to server and go to demoAcitivity
+		AccountManager accountM = (AccountManager) context
+				.getSystemService(context.ACCOUNT_SERVICE);
+		Account[] list = accountM.getAccountsByType("com.google");
+		if (list.length > 0)
+			account = ((list[0].name.split("@"))[0]);
+		else
+			account = "noID";
+		// check if registered
+		if (checkIfRegistered()) {
+
+			// if registered send again to server and go to demoAcitivity
 
 			RequestServer.register(address, regid, account);
 			RequestServer.uploadLogFile(account);
@@ -96,9 +93,9 @@ public class SplashScreen extends Activity {
 
 			// close this activity
 			finish();
-			
 
-		} else iterateHandler();
+		} else
+			iterateHandler();
 
 	}
 
@@ -113,16 +110,17 @@ public class SplashScreen extends Activity {
 			@Override
 			public void run() {
 
-				//checks if there is internet connection
-				if (RequestServer.netCheckin(context))  { 
+				// checks if there is internet connection
+				if (RequestServer.netCheckin(context)) {
 
 					connectionDetails.setText("Network Found!");
 
-
-					//Checks if the BD responsible for the tiles exits, if not download the file from the server
+					// Checks if the BD responsible for the tiles exits, if not
+					// download the file from the server
 					// set the tile provider and database
-					File bd = new File(Environment.getExternalStorageDirectory()
-							.toString() + "/mapapp/world.sqlitedb");
+					File bd = new File(Environment
+							.getExternalStorageDirectory().toString()
+							+ "/mapapp/world.sqlitedb");
 
 					if (!bd.exists()) {
 						DownloadFile.downloadTileDB();
@@ -131,12 +129,11 @@ public class SplashScreen extends Activity {
 					WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 					WifiInfo info = manager.getConnectionInfo();
 
-					//gets mac_address (user identification)
-					address = info.getMacAddress();  
+					// gets mac_address (user identification)
+					address = info.getMacAddress();
 					address = NodeIdentification.getNodeId(address);
 
-
-					//has network, register and go to demoActivity
+					// has network, register and go to demoActivity
 
 					registerInBackground();
 
@@ -154,16 +151,17 @@ public class SplashScreen extends Activity {
 	private boolean checkIfRegistered() {
 		// Check device for Play Services APK. If check succeeds, proceed
 		// with
-		// GCM registration and get active simulations. 
-		if(checkPlayServices()) {
+		// GCM registration and get active simulations.
+		if (checkPlayServices()) {
 			gcm = GoogleCloudMessaging.getInstance(context);
 			regid = getRegistrationId(context);
 			Log.d(TAG, regid);
 
-			if(regid.isEmpty()) return false;
+			if (regid.isEmpty())
+				return false;
 
-			else return true;		
-
+			else
+				return true;
 
 		} else {
 			Log.i(TAG, "No valid Google Play Services APK found.");
@@ -172,7 +170,7 @@ public class SplashScreen extends Activity {
 
 	}
 
-	private void sendToActivity(){
+	private void sendToActivity() {
 		new Handler().postDelayed(new Runnable() {
 			@Override
 			public void run() {
@@ -184,8 +182,6 @@ public class SplashScreen extends Activity {
 			}
 		}, 1000);
 	}
-
-
 
 	/**
 	 * Registers the application with GCM servers asynchronously.
@@ -268,7 +264,6 @@ public class SplashScreen extends Activity {
 		}
 		return true;
 	}
-
 
 	/**
 	 * Gets the current registration ID for application on GCM service, if there
