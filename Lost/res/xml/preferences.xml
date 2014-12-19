@@ -52,8 +52,8 @@
     <!-- webservice connection preferences -->
      <PreferenceCategory android:title="Webservice" >  
         <CheckBoxPreference
-            android:defaultValue="false"
-            android:enabled="false"
+            android:defaultValue="true"
+            android:enabled="true"
             android:key="@string/key_internet"
             android:summary="@string/internet"
             android:title="@string/internet_title" />

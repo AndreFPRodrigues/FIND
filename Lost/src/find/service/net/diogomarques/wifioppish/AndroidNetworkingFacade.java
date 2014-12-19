@@ -254,7 +254,7 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 		try {
 			URL url = new URL("http://www.google.com");
 			HttpURLConnection urlc = (HttpURLConnection) url.openConnection();
-			urlc.setConnectTimeout(100);
+			urlc.setConnectTimeout(5000);
 			urlc.connect();
 
 			if (urlc.getResponseCode() == 200) {

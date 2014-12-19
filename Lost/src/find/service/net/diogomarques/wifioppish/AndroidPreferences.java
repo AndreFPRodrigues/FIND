@@ -128,7 +128,9 @@ public class AndroidPreferences implements IDomainPreferences {
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(mContext);
 		boolean internetState = prefs.getBoolean("internet",true);
-		return false;
+		//FIXME Before deployinmentwas 2* minTime
+
+		return internetState;
 	}
 
 	@Override

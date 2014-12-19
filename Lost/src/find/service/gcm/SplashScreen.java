@@ -3,7 +3,6 @@ package find.service.gcm;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
@@ -137,8 +136,6 @@ public class SplashScreen extends Activity {
 
 					registerInBackground();
 
-					sendToActivity();
-
 				} else {
 					connectionDetails.setText("No Network Found!");
 					iterateHandler();
@@ -191,35 +188,49 @@ public class SplashScreen extends Activity {
 	 */
 	private void registerInBackground() {
 		new AsyncTask<Void, Void, String>() {
+
+			private boolean success;
+
 			@Override
 			protected String doInBackground(Void... params) {
 				String msg = "";
+				Log.d(TAG, "Registering in the background");
+
 				try {
 					if (gcm == null) {
 						gcm = GoogleCloudMessaging.getInstance(context);
 					}
-					if (regid.isEmpty())
-						regid = gcm.register(SENDER_ID);
+					if (regid.isEmpty()) {
+						Log.d(TAG, "REGID is empty");
 
-					msg = "Device registered, registration ID=" + regid;
+						regid = gcm.register(SENDER_ID);
+					}
+
+					msg = "Device registered, registration ID=" + regid
+							+ " add:" + address + " ac:" + account;
+					Log.d(TAG, msg);
 
 					RequestServer.register(address, regid, account);
 
-					// For this demo: we don't need to send it because the
-					// device will send
-					// upstream messages to a server that echo back the message
-					// using the
-					// 'from' address in the message.
-
 					// Persist the regID - no need to register again.
 					storeRegistrationId(context, regid);
+
+					success = true;
 				} catch (IOException ex) {
 					msg = "Error :" + ex.getMessage();
 					// If there is an error, don't just keep trying to register.
 					// Require the user to click a button again, or perform
 					// exponential back-off.
+					registerInBackground();
 				}
 				return msg;
+			}
+
+			@Override
+			protected void onPostExecute(String result) {
+				if (success) {
+					sendToActivity();
+				}
 			}
 
 		}.execute(null, null, null);

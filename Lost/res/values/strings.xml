@@ -6,7 +6,9 @@
     <string name="icon_label">FIND Settings</string>
 
     <!-- settings default values -->
-    <string name="value_t_beac">10000</string>
+        <!-- was 10000-->
+    
+    <string name="value_t_beac">30000</string>
     <string name="value_t_pro">40000</string>
     <!-- was 300000 -->
     <string name="value_t_scan">100000</string>

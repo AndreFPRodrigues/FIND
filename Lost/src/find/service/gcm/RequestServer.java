@@ -68,7 +68,7 @@ public class RequestServer {
 			NetworkInfo mWifi = connManager
 					.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
 
-			if (mWifi != null && mWifi.isConnectedOrConnecting()) {
+			if (mWifi != null && mWifi.isConnected()) {
 				return true;
 
 			} else {
