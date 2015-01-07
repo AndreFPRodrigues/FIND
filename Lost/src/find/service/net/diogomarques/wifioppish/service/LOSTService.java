@@ -135,7 +135,7 @@ public class LOSTService extends Service {
 		context.stopService(svcIntent);
 
 		Log.d(TAG, "Correctly synced and terminated service");
-		System.exit(0);
+		//System.exit(0);
 
 	}
 

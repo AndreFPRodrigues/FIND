@@ -39,12 +39,6 @@ public class StateScanning extends AState {
 			@Override
 			public void onScanTimeout() {
 				environment.deliverMessage("t_scan timeout");
-
-				// goes to internet state if enabled and has messages to send to
-				// webservice
-				if (environment.internetState())
-					environment.gotoState(State.InternetCheck);
-				else
 					environment.gotoState(State.Beaconing);
 			}
 
@@ -67,6 +61,13 @@ public class StateScanning extends AState {
 			@Override
 			public void forceTransition() {
 				onScanTimeout();
+			}
+
+			@Override
+			public void onInternetConnection() {
+				environment
+				.deliverMessage("connected to the internet!");
+				environment.gotoState(State.InternetConn);		
 			}
 		};
 		environment.currentListener(listener);

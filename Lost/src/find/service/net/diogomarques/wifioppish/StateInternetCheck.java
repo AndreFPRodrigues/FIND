@@ -28,7 +28,7 @@ public class StateInternetCheck extends AState {
 		environment.currentListener(null);
 
 		networking.scanForInternet(timeout,
-				new INetworkingFacade.OnInternetConnection() {
+				new INetworkingFacade.OnScanInternet() {
 
 					@Override
 					public void onScanTimeout() {
@@ -53,9 +53,7 @@ public class StateInternetCheck extends AState {
 						environment.gotoState(State.InternetConn);
 					}
 
-					@Override
-					public void forceTransition() {
-					}
+					
 				});
 
 	}

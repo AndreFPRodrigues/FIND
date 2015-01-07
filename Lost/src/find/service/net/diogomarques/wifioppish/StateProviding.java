@@ -39,11 +39,6 @@ public class StateProviding extends AState {
 				if (forced) {
 					environment.deliverMessage("t_pro timeout, stopping AP");
 					networking.stopAccessPoint();
-
-					// goes to internet state if enabled
-					if (environment.internetState())
-						environment.gotoState(State.InternetCheck);
-					else
 						environment.gotoState(State.Scanning);
 				}
 				// no connections

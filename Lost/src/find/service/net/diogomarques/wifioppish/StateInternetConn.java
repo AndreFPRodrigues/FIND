@@ -69,8 +69,8 @@ public class StateInternetConn extends AState {
 			endpoint = new StringBuilder()
 					.append(environment.getPreferences().getApiEndpoint())
 					.append('/').append(METHOD).toString();
-			if(LOSTService.toStop){
-				endpoint+="/legacy";
+			if (LOSTService.toStop) {
+				endpoint += "/legacy";
 			}
 			Log.d("Webservice", "Endpoint: " + endpoint);
 
@@ -79,7 +79,7 @@ public class StateInternetConn extends AState {
 
 			// get messages from send queue and create auto-message
 			List<Message> messages = environment.fetchMessagesFromQueue();
-			//messages.add(environment.createTextMessage(""));
+			// messages.add(environment.createTextMessage(""));
 			JSONArray jsonArray = new JSONArray();
 
 			for (Message m : messages) {
@@ -124,7 +124,7 @@ public class StateInternetConn extends AState {
 							.update(sentUri, cv, null, null);
 				}
 
-				//environment.clearQueue();
+				// environment.clearQueue();
 			}
 
 		} catch (IOException e) {
@@ -141,13 +141,8 @@ public class StateInternetConn extends AState {
 			LOSTService.synced = true;
 			environment.gotoState(State.Stopped);
 		} else {
-			if (environment.getLastState() == State.Scanning && AndroidPreferences.apAvailable) {
-				environment.gotoState(State.Beaconing);
-			} else {
-				environment.gotoState(State.Scanning);
-			}
+			environment.gotoState(State.Scanning);
 		}
 	}
-	
-	
+
 }

@@ -109,8 +109,8 @@
             android:enabled="true"
             android:onClick="activateService"
             android:text="Start service"
-            android:visibility="gone" />
-
+             />
+	<!-- android:visibility="gone" -->
         <!--
               <CheckBox
             android:id="@+id/checkBox1"

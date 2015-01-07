@@ -3,6 +3,9 @@ package find.service.gcm;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
@@ -13,6 +16,7 @@ import find.service.net.diogomarques.wifioppish.NodeIdentification;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -36,6 +40,8 @@ public class SplashScreen extends Activity {
 	public static final String PROPERTY_REG_ID = "registration_id";
 	private static final String PROPERTY_APP_VERSION = "appVersion";
 	private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+
+	private static final int REQUEST_CODE_EMAIL = 1;
 
 	/**
 	 * Tag used on log messages.
@@ -71,22 +77,16 @@ public class SplashScreen extends Activity {
 		address = info.getMacAddress();
 		address = NodeIdentification.getNodeId(address);
 
-		AccountManager accountM = (AccountManager) context
-				.getSystemService(context.ACCOUNT_SERVICE);
-		Account[] list = accountM.getAccountsByType("com.google");
-		if (list.length > 0)
-			account = ((list[0].name.split("@"))[0]);
-		else
-			account = "noID";
 		// check if registered
 		if (checkIfRegistered()) {
 
 			// if registered send again to server and go to demoAcitivity
 
-			RequestServer.register(address, regid, account);
-			RequestServer.uploadLogFile(account);
+			// RequestServer.register(address, regid, account);
+			RequestServer.uploadLogFile(address);
 
 			Log.d("gcm", regid);
+
 			Intent i = new Intent(SplashScreen.this, DemoActivity.class);
 			startActivity(i);
 
@@ -94,7 +94,16 @@ public class SplashScreen extends Activity {
 			finish();
 
 		} else
-			iterateHandler();
+			try {
+				Intent intent = AccountPicker.newChooseAccountIntent(null,
+						null,
+						new String[] { GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE },
+						false, null, null, null, null);
+				startActivityForResult(intent, REQUEST_CODE_EMAIL);
+			} catch (ActivityNotFoundException e) {
+				account = "noID";
+				iterateHandler();
+			}
 
 	}
 
@@ -328,6 +337,21 @@ public class SplashScreen extends Activity {
 		// how you store the regID in your app is up to you.
 		return getSharedPreferences(DemoActivity.class.getSimpleName(),
 				Context.MODE_PRIVATE);
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == REQUEST_CODE_EMAIL && resultCode == RESULT_OK) {
+			String accountName = data
+					.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+			account = accountName;
+			Log.d("gcm", account);
+
+		} else {
+			account = "noID";
+
+		}
+		iterateHandler();	
 	}
 
 }

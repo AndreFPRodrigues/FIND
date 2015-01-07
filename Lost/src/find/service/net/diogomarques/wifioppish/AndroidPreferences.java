@@ -17,7 +17,7 @@ import android.preference.PreferenceManager;
 public class AndroidPreferences implements IDomainPreferences {
 
 	// FIXME switch before deployment
-	public static boolean DEBUG = false; 
+	public static boolean DEBUG = true; 
 	
 	public static boolean apAvailable = true; 
 
@@ -74,7 +74,13 @@ public class AndroidPreferences implements IDomainPreferences {
 	}
 	@Override 
 	public int getTInt() {
-		return DEBUG ? 5000 : getRandomTimeFromKey(R.string.key_t_int);
+		SharedPreferences prefs = PreferenceManager
+				.getDefaultSharedPreferences(mContext);
+		String key = mContext.getString(R.string.key_t_int);
+		int minTime = Integer.parseInt(prefs.getString(key, null));
+		//TODO was 2* minTime
+		int dif = minTime ;
+		return (int) (new Random().nextDouble() * dif + minTime);
 	}
 
 	/**

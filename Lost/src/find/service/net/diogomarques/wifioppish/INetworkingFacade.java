@@ -54,7 +54,7 @@ public interface INetworkingFacade {
 	/**
 	 * Listener for message receiving events.
 	 */
-	public static interface OnReceiveListener extends IListener{
+	public static interface OnReceiveListener extends IListener {
 		/**
 		 * Callback to be invoked when receiving times out
 		 * 
@@ -81,15 +81,28 @@ public interface INetworkingFacade {
 		void onMessageReceived(MessageGroup msgs);
 	}
 
-	/**
-	 * Listener for access point scanning events.
-	 */
-	public static interface OnAccessPointScanListener extends IListener {
+	public static interface OnScanInternet {
+		/**
+		 * Callback to be invoked when connection to Internet is successful.
+		 * 
+		 * @param bSSID
+		 *            BSSID (MAC address) of the remote AP
+		 */
+		public void onInternetConnection();
+
 		/**
 		 * Callback to be invoked when scan times out without finding an
 		 * appropriate access point.
 		 */
 		public void onScanTimeout();
+
+	}
+
+	/**
+	 * Listener for access point scanning events.
+	 */
+	public static interface OnAccessPointScanListener extends IListener,
+	OnScanInternet {
 
 		/**
 		 * Callback to be invoked when connection to AP is successful.
@@ -98,6 +111,7 @@ public interface INetworkingFacade {
 		 *            BSSID (MAC address) of the remote AP
 		 */
 		public void onAPConnection(String bSSID);
+
 	}
 
 	/**
@@ -164,31 +178,22 @@ public interface INetworkingFacade {
 	void scanForAP(int timeout, OnAccessPointScanListener listener);
 
 	/**
-	 * Listener for access point scanning events.
-	 */
-	public static interface OnInternetConnection extends IListener{
-		/**
-		 * Callback to be invoked when scan times out without finding an
-		 * appropriate access point.
-		 */
-		public void onScanTimeout();
-
-		/**
-		 * Callback to be invoked when a ping to www.google.pt is successful.
-		 * 
-		 */
-		public void onInternetConnection();
-	}
-
-	/**
 	 * Scan for internet connection until the timeout is reached.
 	 * 
 	 * @param timeout
 	 *            the timeout in milliseconds.
 	 * @param listener
 	 *            a listener for access point scanning events.
+	 * @return
 	 * 
 	 */
-	void scanForInternet(int timeout, OnInternetConnection listener);
+	boolean scanForInternet(OnAccessPointScanListener listener);
+
+	public void setTimeInScan(long timeInScan);
+
+	public long getTimeInScan();
+
+	public void scanForInternet(int timeout,
+			OnScanInternet onInternetConnection);
 
 }

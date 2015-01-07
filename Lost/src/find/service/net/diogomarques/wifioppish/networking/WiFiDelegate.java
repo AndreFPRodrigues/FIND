@@ -1,4 +1,5 @@
 package find.service.net.diogomarques.wifioppish.networking;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -48,7 +49,7 @@ public class WiFiDelegate {
 			Log.w("", "Trying to unregister a receiver that isn't registered.");
 		}
 		return sucess;
-		
+
 	}
 
 	public void scanForAP(int timeoutMilis,
@@ -152,13 +153,22 @@ public class WiFiDelegate {
 						Log.w("", "Scan timeout");
 						safeUnregisterReceiver(scanReceiver);
 						listener.onScanTimeout();
+						mEnvironment.getNetworkingFacade().setTimeInScan( 0);
+
 					} else {
 						Log.w("", "Scan tick" + delay + " " + totaltime);
-
-						long totalTime = delay + totaltime;
-						scanTick(timeoutMilis, delay, manager, connected,
-								totalTime, scanReceiver, listener);
+						if (!mEnvironment.getNetworkingFacade()
+								.scanForInternet(listener)) {
+							long totalTime = delay + totaltime;
+							scanTick(timeoutMilis, delay, manager, connected,
+									totalTime, scanReceiver, listener);
+						}else{
+							mEnvironment.getNetworkingFacade().setTimeInScan( totaltime);
+						}
 					}
+				}else{
+					mEnvironment.getNetworkingFacade().setTimeInScan( totaltime);
+
 				}
 			}
 		}, delay);
