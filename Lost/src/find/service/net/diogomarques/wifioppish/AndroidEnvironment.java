@@ -499,7 +499,7 @@ public class AndroidEnvironment implements IEnvironment {
 			currentListener.forceTransition();
 		}
 		sensorGroup.removeAllSensors(true);
-		 mNetworkingFacade.stopAccessPoint();
+		mNetworkingFacade.stopAccessPoint(); 
 	}
 
 	/**

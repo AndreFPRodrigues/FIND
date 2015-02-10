@@ -194,6 +194,10 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 	@Override
 	public void scanForInternet(int timeout,
 			OnScanInternet listener) {
+		final WifiManager manager = (WifiManager) mContext
+				.getSystemService(Context.WIFI_SERVICE);
+		manager.setWifiEnabled(true);
+		
 		long current = System.currentTimeMillis() - lastInternetConnection;
 		if ((current > mEnvironment.getPreferences().getTInt()|| LOSTService.toStop) && isNetworkAvailable()) {
 			if (ping()) {

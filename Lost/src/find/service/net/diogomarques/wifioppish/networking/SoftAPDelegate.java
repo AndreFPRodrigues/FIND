@@ -95,25 +95,18 @@ public class SoftAPDelegate {
 			Log.d(TAG, "Appp:" + verify);
 
 		} catch (SecurityException e) {
-			Log.e(TAG, e.getMessage(), e);
 			AndroidPreferences.apAvailable = false;
-			Log.d(TAG, "AP SET:FALSE");
 		} catch (NoSuchMethodException e) {
 			Log.e(TAG, e.getMessage(), e);
 			AndroidPreferences.apAvailable = false;
-			Log.d(TAG, "AP SET:FALSE");
 		} catch (IllegalArgumentException e) {
 			Log.e(TAG, e.getMessage(), e);
 			AndroidPreferences.apAvailable = false;
-			Log.d(TAG, "AP SET:FALSE");
 		} catch (IllegalAccessException e) {
-			Log.e(TAG, e.getMessage(), e);
 			AndroidPreferences.apAvailable = false;
-			Log.d(TAG, "AP SET:FALSE");
 		} catch (InvocationTargetException e) {
 			Log.e(TAG, e.getMessage(), e);
 			AndroidPreferences.apAvailable = false;
-			Log.d(TAG, "AP SET:FALSE");
 		}
 		// Log.d(TAG, "APPP 3: " + getWifiApState(manager) + " " + enable);
 

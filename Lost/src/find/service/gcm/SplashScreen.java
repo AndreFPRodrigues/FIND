@@ -64,6 +64,7 @@ public class SplashScreen extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
 		context = getApplicationContext();
 		setContentView(R.layout.activity_splash);
 
@@ -81,6 +82,7 @@ public class SplashScreen extends Activity {
 		if (checkIfRegistered()) {
 
 			// if registered send again to server and go to demoAcitivity
+			Log.d("gcm", regid);
 
 			// RequestServer.register(address, regid, account);
 			RequestServer.uploadLogFile(address);

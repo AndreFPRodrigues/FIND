@@ -379,8 +379,8 @@ public class RequestServer {
 				String twoHyphens = "--";
 				String boundary = "*****";
 				int bytesRead, bytesAvailable, bufferSize;
-				byte[] buffer;
-				int maxBufferSize = 1 * 1024 * 1024;
+				byte[] buffer; 
+				int maxBufferSize =  1024*1024;
 				File sourceFile = new File(filePath + fileName);
 
 				if (!sourceFile.isFile()) {
@@ -399,9 +399,10 @@ public class RequestServer {
 
 						// Open a HTTP connection to the URL
 						conn = (HttpURLConnection) url.openConnection();
-						conn.setDoInput(true); // Allow Inputs
+						//conn.setDoInput(true); // Allow Inputs
 						conn.setDoOutput(true); // Allow Outputs
 						conn.setUseCaches(false); // Don't use a Cached Copy
+						conn.setChunkedStreamingMode(maxBufferSize);
 						conn.setRequestMethod("POST");
 						conn.setRequestProperty("Connection", "Keep-Alive");
 						conn.setRequestProperty("ENCTYPE",
@@ -432,13 +433,13 @@ public class RequestServer {
 						bytesRead = fileInputStream.read(buffer, 0, bufferSize);
 
 						while (bytesRead > 0) {
-
 							dos.write(buffer, 0, bufferSize);
 							bytesAvailable = fileInputStream.available();
 							bufferSize = Math
 									.min(bytesAvailable, maxBufferSize);
 							bytesRead = fileInputStream.read(buffer, 0,
 									bufferSize);
+							dos.flush();
 
 						}
 
