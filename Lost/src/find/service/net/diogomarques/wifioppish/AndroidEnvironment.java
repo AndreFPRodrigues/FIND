@@ -1,15 +1,21 @@
 package find.service.net.diogomarques.wifioppish;
 
-import find.service.gcm.DemoActivity;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
-import find.service.net.diogomarques.wifioppish.IEnvironment.State;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.database.ContentObserver;
+import android.database.Cursor;
+import android.location.Location;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
 import find.service.net.diogomarques.wifioppish.INetworkingFacade.IListener;
-import find.service.net.diogomarques.wifioppish.INetworkingFacade.OnReceiveListener;
 import find.service.net.diogomarques.wifioppish.networking.Message;
 import find.service.net.diogomarques.wifioppish.sensors.BatterySensor;
 import find.service.net.diogomarques.wifioppish.sensors.LocationSensor;
@@ -19,22 +25,6 @@ import find.service.net.diogomarques.wifioppish.sensors.SensorGroup;
 import find.service.net.diogomarques.wifioppish.sensors.SensorGroup.SensorGroupKey;
 import find.service.net.diogomarques.wifioppish.service.LOSTService;
 import find.service.net.diogomarques.wifioppish.structs.ConcurrentForwardingQueue;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
-import android.database.ContentObserver;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
-import android.preference.PreferenceManager;
-import android.util.Log;
 
 /**
  * An Android-specific implementation of the state machine environment. To
@@ -73,6 +63,7 @@ public class AndroidEnvironment implements IEnvironment {
 	private ConcurrentForwardingQueue mQueue;
 
 	private String myNodeID;
+	private String myAccountName;
 	private boolean victimSafe;
 
 	// stats
@@ -150,6 +141,16 @@ public class AndroidEnvironment implements IEnvironment {
 				contentvalues);
 		Log.i("NodeID", "My node id is: " + environment.myNodeID);
 
+		// get/generate the accountName and spread the word
+		environment.myAccountName = environment.mPreferences.getAccountName();
+		contentvalues = new ContentValues();
+		contentvalues.put(MessagesProvider.COL_STATUSKEY, "account");
+		contentvalues.put(MessagesProvider.COL_STATUSVALUE,
+				environment.myAccountName);
+		c.getContentResolver().insert(MessagesProvider.URI_STATUS,
+				contentvalues);
+		Log.i("AccountName", "My account name is: " + environment.myAccountName);
+
 		// start forwarding sending queue
 		environment.mQueue = new ConcurrentForwardingQueue();
 		// stats
@@ -173,9 +174,8 @@ public class AndroidEnvironment implements IEnvironment {
 		environment
 				.getAndroidContext()
 				.getContentResolver()
-				.registerContentObserver(
-						Uri.parse("content://find.service.net.diogomarques.wifioppish.MessagesProvider/customsend"),
-						true, environment.cmo);
+				.registerContentObserver(MessagesProvider.URI_CUSTOM, true,
+						environment.cmo);
 
 		// singleton setup
 		instance = environment;
@@ -209,7 +209,7 @@ public class AndroidEnvironment implements IEnvironment {
 				|| state == State.InternetConn) {
 			semNextState.release();
 			nextState = state;
-		
+
 		} else {
 			semNextState.release();
 			nextState = State.Stopped;
@@ -300,6 +300,20 @@ public class AndroidEnvironment implements IEnvironment {
 
 	@Override
 	public void pushMessageToQueue(Message m) {
+		boolean needsUpdate = false;
+
+		// update status
+		if (m.getStatus().equals(MessagesProvider.SENT)
+				|| m.getStatus().equals(MessagesProvider.REC_VIC)
+				|| (m.getStatus().equals(MessagesProvider.CREATED) && !m
+						.getNodeId().equals(getMyNodeId()))) {
+
+			// FIXME: change this when there is an option to choose if a user is
+			// a victim or rescuer
+			m.setStatus(MessagesProvider.REC_VIC, System.currentTimeMillis());
+			needsUpdate = true;
+		}
+
 		// duplicate check
 		Integer msgHashcode = Integer.valueOf(m.hashCode());
 		if (!duplicates.contains(msgHashcode)) {
@@ -312,6 +326,10 @@ public class AndroidEnvironment implements IEnvironment {
 
 			// also store Message in Persistent Storage
 			storeMessage(m);
+		} else if (needsUpdate) {
+
+			// already exists but needs to update
+			updateMessage(m);
 		}
 	}
 
@@ -363,15 +381,8 @@ public class AndroidEnvironment implements IEnvironment {
 	}
 
 	@Override
-	public double[] getMyLocation() {
-		LocationSensor sensor = (LocationSensor) sensorGroup
-				.getSensor(SensorGroupKey.Location);
-		if (sensor != null) {
-			return (double[]) sensor.getCurrentValue();
-		} else {
-			return new double[] { 0, 0,0 }; 
-		}
-
+	public String getMyAccountName() {
+		return myAccountName;
 	}
 
 	@Override
@@ -384,18 +395,24 @@ public class AndroidEnvironment implements IEnvironment {
 	}
 
 	@Override
-	public Message createTextMessage(String contents) {
+	public Message createTextMessage(String text) {
 
-		double[] location = getMyLocation();
 		String nodeID = getMyNodeId();
+		String accountName = getMyAccountName();
+		long timestamp = System.currentTimeMillis();
 
-		Message newMsg = new Message(nodeID, System.currentTimeMillis(),
-				location, contents);
+		Message newMsg = new Message(nodeID, accountName, timestamp, text,
+				MessagesProvider.CREATED, timestamp, MessagesProvider.VICTIM);
 
 		// set other attributes
 		newMsg.setSafe(victimSafe);
 
 		if (sensorGroup != null) {
+			Location location = (Location) sensorGroup
+					.getSensorCurrentValue(SensorGroupKey.Location);
+			if (location != null)
+				newMsg.setLocation(location);
+
 			Integer battery = (Integer) sensorGroup
 					.getSensorCurrentValue(SensorGroupKey.Battery);
 			if (battery != null)
@@ -450,45 +467,67 @@ public class AndroidEnvironment implements IEnvironment {
 	 *            Message to be stored persistently
 	 */
 	private void storeMessage(Message msg) {
-		String author = msg.getNodeId();
 
 		ContentValues cv = new ContentValues();
-		cv.put(MessagesProvider.COL_ADDED, System.currentTimeMillis());
 		cv.put(MessagesProvider.COL_ID,
 				String.format("%s%d", msg.getNodeId(), msg.getTimestamp()));
-		cv.put(MessagesProvider.COL_NODE, author);
+		cv.put(MessagesProvider.COL_NODE, msg.getNodeId());
+		cv.put(MessagesProvider.COL_GOOGLE, msg.getAccountName());
 		cv.put(MessagesProvider.COL_TIME, msg.getTimestamp());
-		cv.put(MessagesProvider.COL_MSG, msg.getMessage());
+
 		cv.put(MessagesProvider.COL_LAT, msg.getLatitude());
 		cv.put(MessagesProvider.COL_LON, msg.getLongitude());
-		cv.put(MessagesProvider.COL_CONF, msg.getLocationConfidence());
+		cv.put(MessagesProvider.COL_ACC, msg.getLocationAccuracy());
+		cv.put(MessagesProvider.COL_LOC_TIME, msg.getLocationTime());
+
 		cv.put(MessagesProvider.COL_BATTERY, msg.getBattery());
 		cv.put(MessagesProvider.COL_STEPS, msg.getSteps());
 		cv.put(MessagesProvider.COL_SCREEN, msg.getScreenOn());
-		cv.put(MessagesProvider.COL_DISTANCE, -1);
 		cv.put(MessagesProvider.COL_SAFE, msg.isSafe() ? 1 : 0);
 
+		cv.put(MessagesProvider.COL_MSG, msg.getMessage());
+		cv.put(MessagesProvider.COL_ADDED, System.currentTimeMillis());
+		cv.put(MessagesProvider.COL_STATUS, msg.getStatus());
+		cv.put(MessagesProvider.COL_STATUS_TIME, msg.getStatusTime());
+		cv.put(MessagesProvider.COL_ORIGIN, msg.getOrigin());
+
+		cv.put(MessagesProvider.COL_TARGET, msg.getTarget());
+		cv.put(MessagesProvider.COL_TAR_LAT, msg.getTargetLatitude());
+		cv.put(MessagesProvider.COL_TAR_LON, msg.getTargetLongitude());
+		cv.put(MessagesProvider.COL_TAR_RAD, msg.getTargetRadius());
+
 		// check Message author and save accordingly
-		if (!author.equals(getMyNodeId())) {
-			cv.put(MessagesProvider.COL_ORIGIN, "network"); // message origin is
-															// always network
-															// inside service
+		if (!msg.getNodeId().equals(getMyNodeId())) {
 			Uri uriRec = context.getContentResolver().insert(
 					MessagesProvider.URI_RECEIVED, cv);
 			if (uriRec != null)
 				Log.i("storeMessage", "Message persistently stored via "
 						+ uriRec.toString());
 		}
-
-		// message to be sent later
-		cv.remove(MessagesProvider.COL_ORIGIN);
-		cv.put(MessagesProvider.COL_STATUS, MessagesProvider.OUT_WAIT);
 		Uri uri = context.getContentResolver().insert(
 				MessagesProvider.URI_SENT, cv);
 
 		if (uri != null)
 			Log.i("storeMessage",
 					"Message persistently stored via " + uri.toString());
+	}
+
+	private void updateMessage(Message msg) {
+
+		ContentValues cv = new ContentValues();
+		cv.put(MessagesProvider.COL_STATUS, msg.getStatus());
+		cv.put(MessagesProvider.COL_STATUS_TIME, msg.getStatusTime());
+
+		if (!msg.getNodeId().equals(getMyNodeId())) {
+			Uri receivedUri = Uri.parse(MessagesProvider.PROVIDER_URL
+					+ MessagesProvider.METHOD_RECEIVED + "/" + msg.getNodeId()
+					+ msg.getTimestamp());
+			context.getContentResolver().update(receivedUri, cv, null, null);
+		}
+		Uri sentUri = Uri.parse(MessagesProvider.PROVIDER_URL
+				+ MessagesProvider.METHOD_SENT + "/" + msg.getNodeId()
+				+ msg.getTimestamp());
+		context.getContentResolver().update(sentUri, cv, null, null);
 	}
 
 	@Override
@@ -499,7 +538,7 @@ public class AndroidEnvironment implements IEnvironment {
 			currentListener.forceTransition();
 		}
 		sensorGroup.removeAllSensors(true);
-		mNetworkingFacade.stopAccessPoint(); 
+		mNetworkingFacade.stopAccessPoint();
 	}
 
 	/**
@@ -547,9 +586,7 @@ public class AndroidEnvironment implements IEnvironment {
 			ContentResolver cr = environment.getAndroidContext()
 					.getContentResolver();
 			Cursor c = cr
-					.query(Uri
-							.parse("content://find.service.net.diogomarques.wifioppish.MessagesProvider/customsend"),
-							null, "", null, "");
+					.query(MessagesProvider.URI_CUSTOM, null, "", null, "");
 
 			if (c.moveToFirst()) {
 				// get Messages and put them into sending queue
@@ -563,9 +600,7 @@ public class AndroidEnvironment implements IEnvironment {
 				} while (c.moveToNext());
 
 				// delete custom Messages
-				cr.delete(
-						Uri.parse("content://find.service.net.diogomarques.wifioppish.MessagesProvider/customsend"),
-						"", null);
+				cr.delete(MessagesProvider.URI_CUSTOM, "", null);
 			}
 		}
 	}
