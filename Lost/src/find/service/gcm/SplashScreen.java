@@ -38,6 +38,7 @@ public class SplashScreen extends Activity {
 
 	public static final String EXTRA_MESSAGE = "message";
 	public static final String PROPERTY_REG_ID = "registration_id";
+	public static final String PROPERTY_ACCOUNT = "google_account";
 	private static final String PROPERTY_APP_VERSION = "appVersion";
 	private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
@@ -82,12 +83,10 @@ public class SplashScreen extends Activity {
 		if (checkIfRegistered()) {
 
 			// if registered send again to server and go to demoAcitivity
-			Log.d("gcm", regid);
+			Log.d(TAG, regid);
 
 			// RequestServer.register(address, regid, account);
 			RequestServer.uploadLogFile(address);
-
-			Log.d("gcm", regid);
 
 			Intent i = new Intent(SplashScreen.this, DemoActivity.class);
 			startActivity(i);
@@ -223,8 +222,8 @@ public class SplashScreen extends Activity {
 
 					RequestServer.register(address, regid, account);
 
-					// Persist the regID - no need to register again.
-					storeRegistrationId(context, regid);
+					// Persist the regID and account - no need to register again.
+					storeRegistrationDetails(context, regid, account);
 
 					success = true;
 				} catch (IOException ex) {
@@ -248,20 +247,23 @@ public class SplashScreen extends Activity {
 	}
 
 	/**
-	 * Stores the registration ID and the app versionCode in the application's
-	 * {@code SharedPreferences}.
+	 * Stores the registration ID, the google account name and the app
+	 * versionCode in the application's {@code SharedPreferences}.
 	 * 
 	 * @param context
 	 *            application's context.
 	 * @param regId
 	 *            registration ID
+	 * @param account
+	 *            google account name
 	 */
-	private void storeRegistrationId(Context context, String regId) {
+	private void storeRegistrationDetails(Context context, String regId, String account) {
 		final SharedPreferences prefs = getGcmPreferences(context);
 		int appVersion = getAppVersion(context);
 		Log.i(TAG, "Saving regId on app version " + appVersion);
 		SharedPreferences.Editor editor = prefs.edit();
 		editor.putString(PROPERTY_REG_ID, regId);
+		editor.putString(PROPERTY_ACCOUNT, account);
 		editor.putInt(PROPERTY_APP_VERSION, appVersion);
 		editor.commit();
 	}

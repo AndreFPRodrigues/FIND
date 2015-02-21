@@ -3,6 +3,8 @@ package find.service.net.diogomarques.wifioppish;
 import java.util.Random;
 
 import find.service.R;
+import find.service.gcm.DemoActivity;
+import find.service.gcm.SplashScreen;
 import find.service.net.diogomarques.wifioppish.IEnvironment.State;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -100,7 +102,8 @@ public class AndroidPreferences implements IDomainPreferences {
 	 */
 	protected int getRandomTimeFromKey(int resId) {
 		if (DEBUG)
-			return debugMinTimeMilis;
+			return debugMinTimeMilis + (1000 * 10)
+					+ (int) (new Random().nextDouble() * debugMinTimeMilis);
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(mContext);
 		String key = mContext.getString(resId);
@@ -183,5 +186,15 @@ public class AndroidPreferences implements IDomainPreferences {
 		}
 		
 		return nodeid;
+	}
+	
+	@Override
+	public String getAccountName() {
+		SharedPreferences prefs = mContext.getSharedPreferences(
+				DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
+
+		String key = SplashScreen.PROPERTY_ACCOUNT;
+		String accountName = prefs.getString(key, "Unknown");
+		return accountName;
 	}
 }

@@ -154,10 +154,10 @@ public interface IEnvironment {
 	public abstract String getMyNodeId();
 	
 	/**
-	 * Gets the current node geographical location
-	 * @return geographical location (latitude, longitude)
+	 * Gets the User's google account name
+	 * @return Google account name
 	 */
-	public abstract double[] getMyLocation();
+	public abstract String getMyAccountName();
 	
 	/**
 	 * Stores a Message received inside a log file
