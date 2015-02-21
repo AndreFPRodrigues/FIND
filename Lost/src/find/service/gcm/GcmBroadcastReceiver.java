@@ -133,8 +133,7 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 			// prompt pop up window
 			currentLoc = l;
-			startPopUp(new double[] { currentLoc.getLatitude(),
-					currentLoc.getLongitude() });
+			startPopUp(currentLoc);
 		}
 
 	}
@@ -147,22 +146,25 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	 * 
 	 * @param currentLoc
 	 */
-	private void startPopUp(double[] currentLoc) {
+	private void startPopUp(Location currentLoc) {
 
 		final SharedPreferences preferences = c.getApplicationContext()
 				.getSharedPreferences("Lost",
 						android.content.Context.MODE_PRIVATE);
 
+		double latitude = currentLoc.getLatitude();
+		double longitude = currentLoc.getLongitude();
+		
 		// if location is defined check if its inside the area of the alert
 		boolean isInside;
 		LatLng center;
-		if (currentLoc != null && currentLoc[0] != 0) {
-			Log.d(TAG, "got location:" + currentLoc.toString());
+		if (currentLoc != null && latitude != 0) {
+			Log.d(TAG, "got location:" + latitude + " " + longitude);
 			SharedPreferences.Editor editor = preferences.edit();
 			editor.putBoolean("location", true);
 			editor.commit();
 
-			center = new LatLng(currentLoc[0], currentLoc[1]);
+			center = new LatLng(latitude, longitude);
 			isInside = LocationFunctions.isInLocation(currentLoc, latS, lonS,
 					latE, lonE);
 			if (!isInside) {
@@ -230,13 +232,13 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		@Override
 		public void run() {
 			Log.d(TAG, "Trying to get  location");
-			double[] value = (double[]) ls.getCurrentValue();
-			if (value[0] != 0) {
+			Location location = (Location) ls.getCurrentValue();
+			if (location.getLatitude() != 0) {
 				ls.stopSensor();
 
 				Notifications.generateNotification(c, "Alert", "Location Found!", null);
 
-				startPopUp(value);
+				startPopUp(location);
 			} else {
 
 				getLocation();

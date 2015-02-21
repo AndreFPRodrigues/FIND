@@ -1,18 +1,20 @@
 package find.service.gcm;
 
 import java.util.GregorianCalendar;
-import find.service.net.diogomarques.wifioppish.sensors.LocationSensor;
-import find.service.net.diogomarques.wifioppish.service.LOSTService;
+
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
+import find.service.net.diogomarques.wifioppish.sensors.LocationSensor;
+import find.service.net.diogomarques.wifioppish.service.LOSTService;
 
 public class ScheduleService extends BroadcastReceiver {
 	private final static String TAG = "gcm";
@@ -114,10 +116,10 @@ public class ScheduleService extends BroadcastReceiver {
 			new AsyncTask<Void, Void, Void>() {
 				@Override
 				protected Void doInBackground(Void... params1) {
-					double[] value = (double[]) ls.getCurrentValue();
-					if (value[0] != 0) {
+					Location location = (Location) ls.getCurrentValue();
+					if (location.getLatitude() != 0) {
 						if (!LocationFunctions
-								.isInLocation(value, lat, lon, lat2, lon2)) {
+								.isInLocation(location, lat, lon, lat2, lon2)) {
 							stop(c);
 							Log.d(TAG, "Not in location");
 						}
