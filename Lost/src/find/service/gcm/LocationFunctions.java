@@ -54,13 +54,13 @@ public class LocationFunctions {
 
 	// Primitive location checker
 	//TODO real location compare
-	public static boolean isInLocation(double[] loc, double f_latS,
+	public static boolean isInLocation(Location loc, double f_latS,
 			double f_lonS, double f_latE, double f_lonE) {
 
 		Log.d(TAG, "values " + f_latS + " " + f_lonS + " " + f_latE + " "
 				+ f_lonE);
-		double lat = loc[0];
-		double lon = loc[1];
+		double lat = loc.getLatitude();
+		double lon = loc.getLongitude();
 		if (lat < f_latS && lat > f_latE && lon > f_lonE && lon < f_lonS) {
 			return true;
 		}

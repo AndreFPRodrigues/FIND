@@ -19,7 +19,7 @@ import android.util.Log;
  * Content Provider to access {@link Message Messages} received and sent to
  * opportunistic network.
  * 
- * @author André Silva <asilva@lasige.di.fc.ul.pt>
+ * @author Andrï¿½ Silva <asilva@lasige.di.fc.ul.pt>
  */
 public class MessagesProvider extends ContentProvider {
 
@@ -78,39 +78,57 @@ public class MessagesProvider extends ContentProvider {
 	
 
 
-	// database fields
+	// database fields - identification
 	public static final String COL_ID = "_id";
 	public static final String COL_NODE = "nodeid";
+	public static final String COL_GOOGLE = "google_account";
 	public static final String COL_TIME = "timestamp";
-	public static final String COL_MSG = "message";
+	
+	// database fields - sensor data - location
 	public static final String COL_LAT = "latitude";
 	public static final String COL_LON = "longitude";
-	public static final String COL_CONF = "llconf";
+	public static final String COL_ACC = "accuracy";
+	public static final String COL_LOC_TIME = "location_timestamp";
+	
+	// database fields - sensors data - other
 	public static final String COL_BATTERY = "battery";
 	public static final String COL_STEPS = "steps";
 	public static final String COL_SCREEN = "screen";
-	public static final String COL_DISTANCE = "distance";
 	public static final String COL_SAFE = "safe";
-	public static final String COL_ADDED = "local_added";
-	public static final String COL_DIRECTION = "direction";
+	
+	// database fields - info
+	public static final String COL_MSG = "message";
+	public static final String COL_ADDED = "added";
 	public static final String COL_STATUS = "status";
+	public static final String COL_STATUS_TIME = "status_timestamp";
 	public static final String COL_ORIGIN = "origin";
 	public static final String COL_STATUSKEY = "statuskey";
 	public static final String COL_STATUSVALUE = "statusvalue";
+	
+	// database fields - info - target messaging
+	public static final String COL_TARGET = "target";
+	public static final String COL_TAR_LAT = "tartet_latitude";
+	public static final String COL_TAR_LON = "target_longitude";
+	public static final String COL_TAR_RAD = "target_radius";
+	
+	// database fields - simulation
 	public static final String COL_SIMUKEY = "simukey";
 	public static final String COL_SIMUVALUE = "simuvalue";
 	public static final String COL_SIMU_DATE = "simudate";
 	public static final String COL_SIMU_DURATION = "simuduration";
 	public static final String COL_SIMU_LOCAL = "simulocal";
 
-	// constants - direction
-	public static final String MSG_SENT = "sent";
-	public static final String MSG_REC = "received";
-
 	// constants - message status
-	public static final String OUT_WAIT = "waiting";
-	public static final String OUT_NET = "sentNet";
-	public static final String OUT_WS = "sentWS";
+	public static final String CREATED = "created";
+	public static final String SENT = "sent";
+	public static final String REC_VIC = "receivedVictim";
+	public static final String REC_RES = "receivedRescuer";
+	public static final String REC_CC = "receivedControlCentre";
+	
+	// contants - message origin & target message
+	public static final String VICTIM = "victim";
+	public static final String RESCUER = "rescuer";
+	public static final String CONTROL_CENTRE = "controlCentre";
 
 	private DBHelper dbHelper;
 	static final UriMatcher uriMatcher;
@@ -144,24 +162,21 @@ public class MessagesProvider extends ContentProvider {
 	static final String TABLE_SIMULATION = "simulation";
 
 	static final int DATABASE_VERSION = 2;
+	private static final String TABLE = " (" + COL_ID + " TEXT PRIMARY KEY, "
+			+ " " + COL_NODE + " TEXT," + " " + COL_GOOGLE + " TEXT," + " "
+			+ COL_TIME + " DOUBLE," + " " + COL_LAT + " DOUBLE," + " "
+			+ COL_LON + " DOUBLE," + " " + COL_ACC + " INTEGER," + " "
+			+ COL_LOC_TIME + " DOUBLE," + " " + COL_BATTERY + " INTEGER," + " "
+			+ COL_STEPS + " INTEGER," + " " + COL_SCREEN + " INTEGER," + " "
+			+ COL_SAFE + " INTEGER," + " " + COL_MSG + " TEXT," + " "
+			+ COL_ADDED + " DOUBLE," + " " + COL_STATUS + " TEXT," + " "
+			+ COL_STATUS_TIME + " DOUBLE, " + " " + COL_ORIGIN + " TEXT," + " "
+			+ COL_TARGET + " TEXT," + " " + COL_TAR_LAT + " DOUBLE," + " "
+			+ COL_TAR_LON + " DOUBLE," + " " + COL_TAR_RAD + " INTEGER" + ");";
 	static final String CREATE_TABLE_OUTGOING = " CREATE TABLE "
-			+ TABLE_OUTGOING + " (" + COL_ID + " TEXT PRIMARY KEY, " + " "
-			+ COL_NODE + " TEXT," + " " + COL_TIME + " DOUBLE," + " " + COL_MSG
-			+ " TEXT," + " " + COL_LAT + " DOUBLE," + " " + COL_LON
-			+ " DOUBLE," + " " + COL_CONF + " INTEGER," + " " + COL_BATTERY
-			+ " INTEGER," + " " + COL_STEPS + " INTEGER," + " " + COL_SCREEN
-			+ " INTEGER," + " " + COL_DISTANCE + " INTEGER," + " " + COL_SAFE
-			+ " INTEGER," + " " + COL_ADDED + " DOUBLE," + " " + COL_STATUS
-			+ " TEXT );";
+			+ TABLE_OUTGOING + TABLE;
 	static final String CREATE_TABLE_INCOMING = " CREATE TABLE "
-			+ TABLE_INCOMING + " (" + COL_ID + " TEXT PRIMARY KEY, " + " "
-			+ COL_NODE + " TEXT," + " " + COL_TIME + " DOUBLE," + " " + COL_MSG
-			+ " TEXT," + " " + COL_LAT + " DOUBLE," + " " + COL_LON
-			+ " DOUBLE," + " " + COL_CONF + " INTEGER," + " " + COL_BATTERY
-			+ " INTEGER," + " " + COL_STEPS + " INTEGER," + " " + COL_SCREEN
-			+ " INTEGER," + " " + COL_DISTANCE + " INTEGER," + " " + COL_SAFE
-			+ " INTEGER," + " " + COL_ORIGIN + " TEXT," + " " + COL_ADDED
-			+ " DOUBLE," + "  cluster TEXT);";
+			+ TABLE_INCOMING + TABLE;
 	static final String CREATE_TABLE_TOSEND = " CREATE TABLE " + TABLE_TOSEND
 			+ " (customMessage TEXT PRIMARY KEY);";
 	static final String CREATE_TABLE_STATUS = " CREATE TABLE " + TABLE_STATUS

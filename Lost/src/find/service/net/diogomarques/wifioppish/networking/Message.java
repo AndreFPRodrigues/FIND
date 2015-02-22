@@ -2,6 +2,9 @@ package find.service.net.diogomarques.wifioppish.networking;
 
 import java.io.Serializable;
 
+import android.location.Location;
+
+import find.service.net.diogomarques.wifioppish.MessagesProvider;
 import find.service.net.diogomarques.wifioppish.sensors.LocationSensor;
 
 /**
@@ -27,67 +30,50 @@ public class Message implements Serializable {
 	 */
 	private static final long serialVersionUID = 4793280315313094725L;
 	
-	/* Essentials attributes */
+	// identification
 	private String nodeId;
+	private String account;
 	private long timestamp;
+	
+	// location
 	private double latitude;
 	private double longitude;
-	private int llconfidence;
-	private String message;
+	private int accuracy;
+	private long locationTimestamp;
 	
-	/* Victim status attributes */
+	// sensor data
 	private int battery;
 	private int steps;
 	private int screenOn;
 	private boolean safe;
 	
-	/**
-	 * Creates a new Message envelope with information regarding external conditions
-	 * 
-	 * @param message Text to be sent
-	 * @param timestamp Timestamp from when the Message was created 
-	 * @param coords Geographical coordinates associated with this Message. The first position 
-	 * 	should represent the latitude, and the second position of array should represent the longitude
-	 * @param nodeId Identificator of the node who sent the message
-	 * 
-	 */
-	public Message(String nodeId, long timestamp, double[] coords, String message) {
+	// info
+	private String message;
+	private String status;
+	private long statusTimestamp;
+	private String origin;
+	
+	// target
+	private String target;
+	private double targetLatitude;
+	private double targetLongitude;
+	private int targetRadius;
+	
+	//Creates a new Message envelope with information regarding external conditions
+	public Message(String nodeId, String account, long timestamp, String message, String status, long statusTimestamp, String origin) {
 		this.nodeId = nodeId;
+		this.account = account;
 		this.timestamp = timestamp;
-		this.latitude = coords[0];
-		this.longitude = coords[1];
-		this.llconfidence = (int) coords[2];
-		this.message = message;
+		
 		this.battery = -1;
 		this.safe = false;
 		this.screenOn = -1;
 		this.steps = -1;
-	}
-	
-	/**
-	 * Creates a new Message envelope with information regarding external conditions
-	 * 
-	 * @param message Text to be sent
-	 * @param timestamp Timestamp from when the Message was created 
-	 * @param coords Geographical coordinates associated with this Message. The first position 
-	 * 	should represent the latitude, and the second position of array should represent the longitude
-	 * @param nodeId Identificator of the node who sent the message
-	 * @param battery Battery level [0-100] of the device
-	 * @param safe True if the victim is currently marked as safe; false otherwise
-	 * @param screen Total number of screen activations
-	 * @param steps Total number of micro-movements done measured
-	 */
-	public Message(String nodeId, long timestamp, double[] coords, String message, int battery, int safe, int screen, int steps) {
-		this.nodeId = nodeId;
-		this.timestamp = timestamp;
-		this.latitude = coords[0];
-		this.longitude = coords[1];
-		this.llconfidence = (int) coords[2];
+		
 		this.message = message;
-		this.battery = battery;
-		this.safe = (safe == 1);
-		this.screenOn = screen;
-		this.steps = steps;
+		this.status = status;
+		this.statusTimestamp = statusTimestamp;
+		this.origin = origin;
 	}
 	
 	/**
@@ -155,11 +141,30 @@ public class Message implements Serializable {
 	}
 
 	/**
+	 * Sets the user's location
+	 * @param location the location to set
+	 */
+	public void setLocation(Location location) {
+		latitude = location.getLatitude();
+		longitude = location.getLongitude();
+		accuracy = (int)location.getAccuracy();
+		locationTimestamp = location.getTime();
+	}
+	
+	/**
 	 * Gets the sender node identificator
 	 * @return the nodeId
 	 */
 	public String getNodeId() {
 		return nodeId;
+	}
+	
+	/**
+	 * Gets the user's google account name
+	 * @return google account name
+	 */
+	public String getAccountName() {
+		return account;
 	}
 
 	/**
@@ -169,7 +174,7 @@ public class Message implements Serializable {
 	public long getTimestamp() {
 		return timestamp;
 	}
-
+	
 	/**
 	 * Gets the latitude of the victim
 	 * @return the latitude
@@ -187,17 +192,21 @@ public class Message implements Serializable {
 	}
 	
 	/**
-	 * Gets the confidence associated with the location
-	 * @return location confidence
-	 * @see {@link LocationSensor#CONFIDENCE_LAST_KNOWN}
-	 * 		Value for poor confidence
-	 * @see {@link LocationSensor#CONFIDENCE_UPDATED}
-	 * 		Value for good confidence
+	 * Gets the location's accuracy
+	 * @return the location's accuracy
 	 */
-	public int getLocationConfidence() {
-		return llconfidence;
+	public int getLocationAccuracy() {
+		return accuracy;
 	}
 
+	/**
+	 * Gets the location's timestamp
+	 * @return the location's timestamp
+	 */
+	public long getLocationTime() {
+		return locationTimestamp;
+	}
+	
 	/**
 	 * Gets the textual message sent by the victim, if any
 	 * @return the text message; empty if no text message was sent
@@ -205,32 +214,117 @@ public class Message implements Serializable {
 	public String getMessage() {
 		return message;
 	}
+	
+	/**
+	 * Sets the status of this message and the time when the status changed
+	 * @param status the status to be set
+	 * @param statusTime the time when the status was changed
+	 */
+	public void setStatus(String status, long statusTime) {
+		this.status = status;
+		this.statusTimestamp = statusTime;
+	}
+	
+	/**
+	 * Gets the status of this message
+	 * @return the status
+	 */
+	public String getStatus() {
+		return status;
+	}
+	
+	/**
+	 * Gets the timestamp of the last update of this messages' status
+	 * @return the timestamp as specified
+	 */
+	public long getStatusTime() {
+		return statusTimestamp;
+	}
+	
+	/**
+	 * Gets the origin of this message
+	 * @return the origin of this message
+	 */
+	public String getOrigin() {
+		return origin;
+	}
+	
+	/**
+	 * Gets the target of this message
+	 * @return the target
+	 */
+	public String getTarget(){
+		return target;
+	}
 
+	/**
+	 * Gets the latitude of this message's target
+	 * @return the target latitude
+	 */
+	public double getTargetLatitude(){
+		return targetLatitude;
+	}
+	
+	/**
+	 * Gets the longitude of this message's target
+	 * @return the target longitude
+	 */
+	public double getTargetLongitude(){
+		return targetLongitude;
+	}
+	
+	/**
+	 * Gets the radius of this message's target
+	 * @return the target radius
+	 */
+	public int getTargetRadius() {
+		return targetRadius;
+	}
+	
 	@Override
 	public String toString() {
-		return "Message [nodeId=" + nodeId + ", timestamp=" + timestamp
-				+ ", latitude=" + latitude + ", longitude=" + longitude
-				+ ", llconfidence=" + llconfidence
-				+ ", message=" + message + ", battery=" + battery + ", steps="
-				+ steps + ", screenOn=" + screenOn + ", safe=" + safe + "]";
+		return "Message [nodeId=" + nodeId + ", account= " + account
+				+ ", timestamp=" + timestamp + ", latitude=" + latitude
+				+ ", longitude=" + longitude + ", accuracy=" + accuracy
+				+ ", locationTimestamp=" + locationTimestamp + ", battery="
+				+ battery + ", steps=" + steps + ", screenOn=" + screenOn
+				+ ", safe=" + safe + ", message=" + message + ", status="
+				+ status + ", statusTimestamp=" + statusTimestamp
+				+ ", origin=" + origin + ", target=" + target
+				+ ", targetLatitude=" + targetLatitude + ", targetLongitutde="
+				+ targetLongitude + ", targetRadius=" + targetRadius + "]";
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + ((account == null) ? 0 : account.hashCode());
+		result = prime * result + accuracy;
 		result = prime * result + battery;
 		long temp;
 		temp = Double.doubleToLongBits(latitude);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
-		result = prime * result + llconfidence;
+		result = prime * result
+				+ (int) (locationTimestamp ^ (locationTimestamp >>> 32));
 		temp = Double.doubleToLongBits(longitude);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		result = prime * result + ((message == null) ? 0 : message.hashCode());
 		result = prime * result + ((nodeId == null) ? 0 : nodeId.hashCode());
+		result = prime * result + ((origin == null) ? 0 : origin.hashCode());
 		result = prime * result + (safe ? 1231 : 1237);
 		result = prime * result + screenOn;
+//		result = prime * result + ((status == null) ? 0 : status.hashCode());
+//		result = prime * result
+//				+ (int) (statusTimestamp ^ (statusTimestamp >>> 32));
 		result = prime * result + steps;
+		result = prime * result + ((target == null) ? 0 : target.hashCode());
+		temp = Double.doubleToLongBits(targetLatitude);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(targetLongitude);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(targetRadius);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
 		result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
 		return result;
 	}
@@ -241,15 +335,22 @@ public class Message implements Serializable {
 			return true;
 		if (obj == null)
 			return false;
-		if (!(obj instanceof Message))
+		if (getClass() != obj.getClass())
 			return false;
 		Message other = (Message) obj;
+		if (account == null) {
+			if (other.account != null)
+				return false;
+		} else if (!account.equals(other.account))
+			return false;
+		if (accuracy != other.accuracy)
+			return false;
 		if (battery != other.battery)
 			return false;
 		if (Double.doubleToLongBits(latitude) != Double
 				.doubleToLongBits(other.latitude))
 			return false;
-		if (llconfidence != other.llconfidence)
+		if (locationTimestamp != other.locationTimestamp)
 			return false;
 		if (Double.doubleToLongBits(longitude) != Double
 				.doubleToLongBits(other.longitude))
@@ -264,11 +365,37 @@ public class Message implements Serializable {
 				return false;
 		} else if (!nodeId.equals(other.nodeId))
 			return false;
+		if (origin == null) {
+			if (other.origin != null)
+				return false;
+		} else if (!origin.equals(other.origin))
+			return false;
 		if (safe != other.safe)
 			return false;
 		if (screenOn != other.screenOn)
 			return false;
+//		if (status == null) {
+//			if (other.status != null)
+//				return false;
+//		} else if (!status.equals(other.status))
+//			return false;
+//		if (statusTimestamp != other.statusTimestamp)
+//			return false;
 		if (steps != other.steps)
+			return false;
+		if (target == null) {
+			if (other.target != null)
+				return false;
+		} else if (!target.equals(other.target))
+			return false;
+		if (Double.doubleToLongBits(targetLatitude) != Double
+				.doubleToLongBits(other.targetLatitude))
+			return false;
+		if (Double.doubleToLongBits(targetLongitude) != Double
+				.doubleToLongBits(other.targetLongitude))
+			return false;
+		if (Double.doubleToLongBits(targetRadius) != Double
+				.doubleToLongBits(other.targetRadius))
 			return false;
 		if (timestamp != other.timestamp)
 			return false;

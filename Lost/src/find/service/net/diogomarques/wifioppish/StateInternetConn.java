@@ -113,10 +113,14 @@ public class StateInternetConn extends AState {
 					// handler
 					environment.deliverCustomMessage(m, 805);
 
+					long statusTime = System.currentTimeMillis();
+					m.setStatus(MessagesProvider.REC_CC, statusTime);
+					
 					// update content provider to tell messages were sucessfully
 					// sent to webservice
 					ContentValues cv = new ContentValues();
-					cv.put("status", MessagesProvider.OUT_WS);
+					cv.put(MessagesProvider.COL_STATUS, MessagesProvider.REC_CC);
+					cv.put(MessagesProvider.COL_STATUS_TIME, statusTime);
 					Uri sentUri = Uri.parse(MessagesProvider.PROVIDER_URL
 							+ MessagesProvider.METHOD_SENT + "/"
 							+ m.getNodeId() + m.getTimestamp());

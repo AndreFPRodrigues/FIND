@@ -28,25 +28,19 @@ public class LocationSensor extends AbstractSensor {
 
 	private static final String TAG = "LocationSensor";
 
-	private static final int INITIAL_INTERVAL =  30 * 1000; // 30seg
-	private static final int SUBSEQUENT_INTERVAL = 2* 60 * 1000; // 2 minutes
+	private static final int INITIAL_INTERVAL = 30 * 1000; // 30seg
+	private static final int SUBSEQUENT_INTERVAL = 2 * 60 * 1000; // 2 minutes
 	private static final int DISTANCE = 5; // meters
 
 	private int currentInterval;
 	private boolean changedInterval;
 	private String currentProvider;
 
-	private static final int CONFIDENCE_HIGH = 10;
-	private static final int CONFIDENCE_LOW = 5;
-
 	private Context context;
-	private LocationManager mLocManager; 
+	private LocationManager mLocManager;
 	private Handler handler;
 
-	// location data
-	private double latitude;
-	private double longitude;
-	private long time;
+	private Location currentBestLocation;
 
 	private LocationListener locationListener = new LocationListener() {
 
@@ -67,23 +61,59 @@ public class LocationSensor extends AbstractSensor {
 
 		@Override
 		public void onLocationChanged(Location location) {
-			Log.i(TAG, "Location Changed. Updated by " + location.getProvider()
-					+ " provider.");
-			
-			latitude = location.getLatitude();
-			longitude = location.getLongitude();
-			time = location.getTime();
 
-			Log.i(TAG, "Latitude is " + latitude + ". Longitude is "
-					+ longitude);
+			if (isBetterLocation(location, currentBestLocation)) {
+				currentBestLocation = location;
 
-			if (currentInterval == INITIAL_INTERVAL && latitude!=0 ) { // first location found
-				// set less frequent updates
-				currentInterval = SUBSEQUENT_INTERVAL;
-				changedInterval = true;
+				Log.i(TAG,
+						"Location Changed. Updated by "
+								+ location.getProvider() + " provider.");
+
+				Log.i(TAG, "Latitude is " + location.getLatitude()
+						+ ". Longitude is " + location.getLongitude());
+
+				if (currentInterval == INITIAL_INTERVAL) {
+					// first location found. Set less frequent updates
+					currentInterval = SUBSEQUENT_INTERVAL;
+					changedInterval = true;
+				}
 			}
 		}
 	};
+
+	/**
+	 * Determines whether one Location reading is better than the current
+	 * Location fix
+	 * 
+	 * @param location
+	 *            The new Location that to evaluate
+	 * @param currentBestLocation
+	 *            The current Location fix, to compare the new one
+	 */
+	private static boolean isBetterLocation(Location newLocation,
+			Location currentBestLocation) {
+
+		if (currentBestLocation.getLatitude() == 0
+				&& currentBestLocation.getLongitude() == 0
+				&& newLocation.getLatitude() != 0
+				&& newLocation.getLongitude() != 0) {
+			
+			// A new location is always better than no location
+			return true;
+		}
+
+		// check if the new location fix is more accurate
+		if (newLocation.getAccuracy() < currentBestLocation.getAccuracy()) {
+			return true;
+		}
+
+		double distance = newLocation.distanceTo(currentBestLocation);
+
+		// if the currentBestLocation fix (which is more accurate) is completely
+		// inside the newLocation, then the later is not a better location
+		return !(distance + currentBestLocation.getAccuracy() <= newLocation
+				.getAccuracy());
+	}
 
 	/**
 	 * Creates a new LocationSensor to gather geographical location updates
@@ -97,6 +127,8 @@ public class LocationSensor extends AbstractSensor {
 		mLocManager = (LocationManager) context
 				.getSystemService(Context.LOCATION_SERVICE);
 		handler = new Handler();
+		currentBestLocation = new Location(""); // latitude and longitude are
+		// zero by default
 		currentInterval = INITIAL_INTERVAL;
 	}
 
@@ -110,21 +142,7 @@ public class LocationSensor extends AbstractSensor {
 
 	@Override
 	public Object getCurrentValue() {
-
-		int confidence = getConfidenceValue();
-		return new double[] { latitude, longitude, confidence };
-	}
-
-	private int getConfidenceValue() {
-		int confidence = CONFIDENCE_HIGH;
-
-		if (latitude == 0 && longitude == 0) {
-			confidence = 0;
-		} else if (System.currentTimeMillis() - time >= SUBSEQUENT_INTERVAL / 2) {
-			confidence = CONFIDENCE_LOW;
-		}
-
-		return confidence;
+		return currentBestLocation;
 	}
 
 	@Override
@@ -173,7 +191,7 @@ public class LocationSensor extends AbstractSensor {
 
 		@Override
 		public void run() {
-			Log.e(TAG, "run");
+			Log.i(TAG, "run");
 
 			if (betterConnectionAvailable()) {
 				// change provider

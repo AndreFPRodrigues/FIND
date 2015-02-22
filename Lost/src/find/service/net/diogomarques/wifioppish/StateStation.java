@@ -60,17 +60,30 @@ public class StateStation extends AState {
 
 					@Override
 					public void onMessageSent(Message msg) {
-						// indicate that message was sent in content provider
-						ContentValues cv = new ContentValues();
-						cv.put("status", MessagesProvider.OUT_NET);
-						Uri sentUri = Uri.parse(
-								MessagesProvider.PROVIDER_URL +
-								MessagesProvider.METHOD_SENT + "/" +
-								msg.getNodeId() + msg.getTimestamp()
-						);
-						context.getContentResolver().update(sentUri, cv, null, null);
-						
-						environment.deliverMessage("message successfully sent");
+						if (msg.getStatus().equals(MessagesProvider.CREATED)
+								|| msg.getStatus()
+										.equals(MessagesProvider.SENT)) {
+							
+							long statusTime = System.currentTimeMillis();
+							msg.setStatus(MessagesProvider.SENT, statusTime);
+							
+							// indicate that message was sent in content
+							// provider
+							ContentValues cv = new ContentValues();
+							cv.put(MessagesProvider.COL_STATUS,
+									MessagesProvider.SENT);
+							cv.put(MessagesProvider.COL_STATUS_TIME, statusTime);
+							Uri sentUri = Uri
+									.parse(MessagesProvider.PROVIDER_URL
+											+ MessagesProvider.METHOD_SENT
+											+ "/" + msg.getNodeId()
+											+ msg.getTimestamp());
+							context.getContentResolver().update(sentUri, cv,
+									null, null);
+
+							environment
+									.deliverMessage("message successfully sent");
+						}
 					}
 					
 					@Override

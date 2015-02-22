@@ -17,7 +17,7 @@ public interface IDomainPreferences {
 	 * <blockquote> "t_beac the time it advertises its presence in AP mode by
 	 * sending SSID beacons."
 	 * <p>
-	 * "If not speciï¬?ed otherwise, the times t_scan min and t_beac min are set
+	 * "If not specified otherwise, the times t_scan min and t_beac min are set
 	 * to 10 seconds".
 	 * <p>
 	 * "Increasing the beaconing time in AP mode has a negative impact on the
@@ -154,5 +154,11 @@ public interface IDomainPreferences {
 	 * @return NodeID in use
 	 */
 	public String getNodeId();
+
+	/**
+	 * Get the user's google account name that was chosen when the user registered. 
+	 * @return User's google account name
+	 */
+	public String getAccountName();
 
 }

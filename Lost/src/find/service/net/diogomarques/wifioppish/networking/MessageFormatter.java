@@ -129,16 +129,24 @@ public class MessageFormatter {
 		JSONObject json = new JSONObject();
 		try {
 			json.put("nodeid", msg.getNodeId());
+			json.put("account", msg.getAccountName());
 			json.put("timestamp", msg.getTimestamp());
-			json.put("msg", msg.getMessage());
 			json.put("latitude", msg.getLatitude());
 			json.put("longitude", msg.getLongitude());
-			json.put("llconf", msg.getLocationConfidence());
+			json.put("accuracy", msg.getLocationAccuracy());
+			json.put("locationTimestamp", msg.getLocationTime());
 			json.put("battery", msg.getBattery());
 			json.put("steps", msg.getSteps());
 			json.put("screen", msg.getScreenOn());
-			json.put("distance", -1);
 			json.put("safe", msg.isSafe() ? 1 : 0);
+			json.put("msg", msg.getMessage());
+			json.put("status", msg.getStatus());
+			json.put("statuTimestamp", msg.getStatusTime());
+			json.put("origin", msg.getOrigin());
+			json.put("target", msg.getTarget());
+			json.put("targetLatitude", msg.getTargetLatitude());
+			json.put("targetLongitude", msg.getTargetLongitude());
+			json.put("targetRadius", msg.getTargetRadius());
 		} catch(JSONException e) {
 			return null;
 		}
@@ -152,17 +160,26 @@ public class MessageFormatter {
 	 */
 	public static String messageToCSV(Message msg) {
 		StringBuilder sb = new StringBuilder(String.format(
-			"\"%s\";%s;%s;%s;%s;%d;%d;%d;%d;%d",
+			"\"%s\";%s;%s;%s;%s;%s;%s;%d;%d;%d;%d;%d;%s;%s;%s;%s;%s;%s;%d",
 			(msg.getMessage() == null ? "" : msg.getMessage()),
 			msg.getNodeId(),
+			msg.getAccountName(),
 			msg.getTimestamp(),
 			msg.getLatitude(),
 			msg.getLongitude(),
-			msg.getLocationConfidence(),
+			msg.getLocationAccuracy(),
+			msg.getLocationTime(),
 			msg.getBattery(),
 			msg.getSteps(),
 			msg.getScreenOn(),
-			msg.isSafe() ? 1 : 0
+			msg.isSafe() ? 1 : 0,
+			msg.getStatus(),
+			msg.getStatusTime(),
+			msg.getOrigin(),
+			msg.getTarget(),
+			msg.getTargetLatitude(),
+			msg.getTargetLongitude(),
+			msg.getTargetRadius()
 		));
 		
 		return sb.toString();
