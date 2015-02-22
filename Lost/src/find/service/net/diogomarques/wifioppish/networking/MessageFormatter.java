@@ -128,7 +128,7 @@ public class MessageFormatter {
 	public static JSONObject messageToJsonObject(Message msg) {
 		JSONObject json = new JSONObject();
 		try {
-			json.put("nodeid", msg.getNodeId());
+			/*json.put("nodeid", msg.getNodeId());
 			json.put("account", msg.getAccountName());
 			json.put("timestamp", msg.getTimestamp());
 			json.put("latitude", msg.getLatitude());
@@ -146,7 +146,19 @@ public class MessageFormatter {
 			json.put("target", msg.getTarget());
 			json.put("targetLatitude", msg.getTargetLatitude());
 			json.put("targetLongitude", msg.getTargetLongitude());
-			json.put("targetRadius", msg.getTargetRadius());
+			json.put("targetRadius", msg.getTargetRadius());*/
+			
+			json.put("nodeid", msg.getNodeId());
+			json.put("timestamp", msg.getTimestamp());
+			json.put("msg", msg.getMessage());
+			json.put("latitude", msg.getLatitude());
+			json.put("longitude", msg.getLongitude());
+			json.put("llconf", msg.getLocationAccuracy());
+			json.put("battery", msg.getBattery());
+			json.put("steps", msg.getSteps());
+			json.put("screen", msg.getScreenOn());
+			json.put("distance", -1);
+			json.put("safe", msg.isSafe() ? 1 : 0);
 		} catch(JSONException e) {
 			return null;
 		}

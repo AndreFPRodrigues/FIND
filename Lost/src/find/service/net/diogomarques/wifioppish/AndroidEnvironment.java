@@ -539,6 +539,7 @@ public class AndroidEnvironment implements IEnvironment {
 		}
 		sensorGroup.removeAllSensors(true);
 		mNetworkingFacade.stopAccessPoint();
+		instance=null;
 	}
 
 	/**

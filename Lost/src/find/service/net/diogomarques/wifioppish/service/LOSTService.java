@@ -74,7 +74,6 @@ public class LOSTService extends Service {
 
 	@Override
 	public void onDestroy() {
-		super.onDestroy();
 
 		if (environment != null) {
 			Log.i(TAG, "Stopped looped");
@@ -85,6 +84,8 @@ public class LOSTService extends Service {
 		}
 		stopSelf();
 		Log.i(TAG, "Service destroyed");
+		super.onDestroy();
+
 
 	}
 
