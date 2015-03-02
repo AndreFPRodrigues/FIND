@@ -281,7 +281,8 @@ public class RequestServer {
 	}
 
 	public static void sendCoordinates(final String macAddress,
-			final LatLng local, final float batery) {
+			final LatLng local, final float batery, final String account,
+			final float accuracy, final long locationTimestamp) {
 
 		new AsyncTask<Void, Void, String>() {
 			@Override
@@ -291,15 +292,16 @@ public class RequestServer {
 				JSONObject json = new JSONObject();
 				try {
 					json.put("nodeid", macAddress);
+					json.put("account", account);
 					json.put("timestamp", System.currentTimeMillis());
 					json.put("msg", "");
 					json.put("latitude", local.latitude);
 					json.put("longitude", local.longitude);
-					json.put("llconf", 10);
+					json.put("accuracy", accuracy);
+					json.put("locationTimestamp", locationTimestamp);
 					json.put("battery", batery);
 					json.put("steps", 0);
 					json.put("screen", 0);
-					json.put("distance", -1);
 					json.put("safe", 0);
 					jsonArray.put(json);
 					String contents = jsonArray.toString();
@@ -379,8 +381,8 @@ public class RequestServer {
 				String twoHyphens = "--";
 				String boundary = "*****";
 				int bytesRead, bytesAvailable, bufferSize;
-				byte[] buffer; 
-				int maxBufferSize =  1024*1024;
+				byte[] buffer;
+				int maxBufferSize = 1024 * 1024;
 				File sourceFile = new File(filePath + fileName);
 
 				if (!sourceFile.isFile()) {
@@ -399,7 +401,7 @@ public class RequestServer {
 
 						// Open a HTTP connection to the URL
 						conn = (HttpURLConnection) url.openConnection();
-						//conn.setDoInput(true); // Allow Inputs
+						// conn.setDoInput(true); // Allow Inputs
 						conn.setDoOutput(true); // Allow Outputs
 						conn.setUseCaches(false); // Don't use a Cached Copy
 						conn.setChunkedStreamingMode(maxBufferSize);
@@ -490,7 +492,7 @@ public class RequestServer {
 
 	}
 
-	public static void downloadAPK(final Context context,final String apk) {
+	public static void downloadAPK(final Context context, final String apk) {
 		new Thread(new Runnable() {
 			public void run() {
 				try {

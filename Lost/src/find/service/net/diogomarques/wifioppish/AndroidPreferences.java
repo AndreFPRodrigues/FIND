@@ -82,6 +82,7 @@ public class AndroidPreferences implements IDomainPreferences {
 		int minTime = Integer.parseInt(prefs.getString(key, null));
 		//TODO was 2* minTime
 		int dif = minTime ;
+		
 		return (int) (new Random().nextDouble() * dif + minTime);
 	}
 

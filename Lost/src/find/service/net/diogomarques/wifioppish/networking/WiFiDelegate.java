@@ -150,13 +150,13 @@ public class WiFiDelegate {
 				manager.startScan();
 				if (!connected.get()) {
 					if (totaltime >= timeoutMilis) {
-						Log.w("", "Scan timeout");
+						//Log.w("", "Scan timeout");
 						safeUnregisterReceiver(scanReceiver);
 						listener.onScanTimeout();
 						mEnvironment.getNetworkingFacade().setTimeInScan( 0);
 
 					} else {
-						Log.w("", "Scan tick" + delay + " " + totaltime);
+						//Log.w("", "Scan tick" + delay + " " + totaltime);
 						if (!mEnvironment.getNetworkingFacade()
 								.scanForInternet(listener)) {
 							long totalTime = delay + totaltime;

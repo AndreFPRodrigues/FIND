@@ -171,10 +171,15 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 				Log.d(TAG, "Stopping: not inside bounds");
 
 				Notifications.generateNotification(c,"Alert" ,"Not inside bounds!", null);
-				return;
+				return; 
 			}
+			
+			final SharedPreferences prefs = c.getSharedPreferences(
+					DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
+			String account= prefs.getString(SplashScreen.PROPERTY_ACCOUNT, "");
+			
 			RequestServer.sendCoordinates(NodeIdentification.getMyNodeId(c),
-					center, LocationFunctions.getBatteryLevel(c));
+					center, LocationFunctions.getBatteryLevel(c),account ,currentLoc.getAccuracy(),currentLoc.getTime());
 			LatLng start = LocationFunctions.adjustCoordinates(center,
 					RADIUS_DOWNLOAD, 135);
 			intent.putExtra("latS", start.latitude);
