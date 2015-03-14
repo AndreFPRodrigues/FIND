@@ -65,7 +65,7 @@ public class MessagesArrayAdapter extends ArrayAdapter<Message> {
 			statusView.setText("Received from another person");
 		}
 		else{
-			statusView.setText("Received by the control centre");
+			statusView.setText("Sent to Control Centre");
 		}
 
 		// message timestamp
