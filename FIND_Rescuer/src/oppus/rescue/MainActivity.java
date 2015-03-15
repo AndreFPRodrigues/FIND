@@ -118,6 +118,8 @@ public class MainActivity extends Activity {
 		// navDrawerItems.add(new NavDrawerItem(navMenuTitles[4], navMenuIcons
 		// .getResourceId(4, 1)));
 
+		
+		
 		// Recycle the typed array
 		navMenuIcons.recycle();
 

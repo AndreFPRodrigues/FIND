@@ -64,7 +64,7 @@ public class LOSTService extends Service {
 	public static boolean toStop = false;
 	public static boolean synced = false;
 	private static boolean isLogging = false;
-	private static final int MESSAGE_RATE=30000;
+	private static final int MESSAGE_RATE = 30000;
 
 	@Override
 	public void onCreate() {
@@ -86,7 +86,6 @@ public class LOSTService extends Service {
 		Log.i(TAG, "Service destroyed");
 		super.onDestroy();
 
-
 	}
 
 	public static void stop(Context context) {
@@ -102,8 +101,7 @@ public class LOSTService extends Service {
 			cv.put(MessagesProvider.COL_STATUSVALUE, "Stopping");
 			context.getContentResolver()
 					.insert(MessagesProvider.URI_STATUS, cv);
-			
-		
+
 			if (environment != null) {
 				msg_gen.stopAutoGeneration();
 				serviceActive = false;
@@ -132,11 +130,12 @@ public class LOSTService extends Service {
 		cv.put(MessagesProvider.COL_STATUSKEY, "service");
 		cv.put(MessagesProvider.COL_STATUSVALUE, "Disabled");
 		context.getContentResolver().insert(MessagesProvider.URI_STATUS, cv);
-
+		boolean forceExit = environment.getPreferences().isRunningLocally();
 		context.stopService(svcIntent);
 
 		Log.d(TAG, "Correctly synced and terminated service");
-		//System.exit(0);
+		if (forceExit)
+			System.exit(0);
 
 	}
 
@@ -149,9 +148,8 @@ public class LOSTService extends Service {
 			@Override
 			protected Void doInBackground(Void... params) {
 
-				
-					environment.startStateLoop(State.Scanning);
-				
+				environment.startStateLoop(State.Scanning);
+
 				return null;
 			}
 
@@ -176,11 +174,11 @@ public class LOSTService extends Service {
 			PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
 			environment = AndroidEnvironment.createInstance(this);
-			
+
 			msg_gen = MessagesGenerator.sharedInstance();
 			msg_gen.initialize(environment);
 			msg_gen.startAutoGeneration(MESSAGE_RATE);
-			
+
 			startForeground(NOTIFICATION_STICKY,
 					getNotification("The FIND Service is now running"));
 			processStart();
@@ -237,7 +235,7 @@ public class LOSTService extends Service {
 				Runtime.getRuntime().exec(
 						new String[] { "logcat", "-f", filePath, "-v", "time",
 								"dalvikvm:S *:V" });
-				//Runtime.getRuntime().exec(new String[] { "logcat", "-c" });
+				// Runtime.getRuntime().exec(new String[] { "logcat", "-c" });
 
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

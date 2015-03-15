@@ -29,7 +29,6 @@ public class SQLittleObserver {
 	public static final String COL_SCREEN = "screen";
 	public static final String COL_DISTANCE = "distance";
 	public static final String COL_SAFE = "safe";
-	public static final String COL_ADDED = "local_added";
 	public static final String COL_DIRECTION = "direction";
 	private static Context context;
 	private MapManager mm;
@@ -82,7 +81,6 @@ public class SQLittleObserver {
 
 				String msg = c.getString(c.getColumnIndex("message"));
 				long time = c.getLong(c.getColumnIndex("timestamp"));
-				// long added = c.getLong(c.getColumnIndex("local_added"));
 				int steps = c.getInt(c.getColumnIndex("steps"));
 				int screen = c.getInt(c.getColumnIndex("screen"));
 				// int distance = c.getInt(c.getColumnIndex("distance"));
@@ -110,7 +108,7 @@ public class SQLittleObserver {
 				//
 				// }
 
-				if (c.getInt(c.getColumnIndex("llconf")) < 1 && lat == 0
+				if (  lat == 0
 						&& lon == 0) {
 
 				} else {
@@ -176,7 +174,7 @@ public class SQLittleObserver {
 					// (c.moveToPosition(Integer.parseInt(split[split.length-1])))
 					// {
 
-					if (c.getInt(c.getColumnIndex("llconf")) < 1 && lat == 0
+					if (  lat == 0
 							&& lon == 0) {
 						return;
 					}
@@ -185,10 +183,8 @@ public class SQLittleObserver {
 					String node = c.getString(c.getColumnIndex("nodeid"));
 					String msg = c.getString(c.getColumnIndex("message"));
 					long time = c.getLong(c.getColumnIndex("timestamp"));
-					long added = c.getLong(c.getColumnIndex("local_added"));
 					int steps = c.getInt(c.getColumnIndex("steps"));
 					int screen = c.getInt(c.getColumnIndex("screen"));
-					int distance = c.getInt(c.getColumnIndex("distance"));
 					int battery = c.getInt(c.getColumnIndex("battery"));
 
 					// if (MapManager.demo) {

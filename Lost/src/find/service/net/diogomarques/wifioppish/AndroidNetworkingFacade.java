@@ -90,7 +90,7 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 		this.mWiFi = wiFi;
 		this.mUdp = udp;
 		lastInternetConnection = 0;
-		timeInScan=0;
+		timeInScan = 0;
 	}
 
 	/**
@@ -157,7 +157,8 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 			final OnAccessPointScanListener listener) {
 		timeoutMilis = (int) (timeoutMilis - timeInScan);
 		long current = System.currentTimeMillis() - lastInternetConnection;
-		if (current > mEnvironment.getPreferences().getTInt()) {
+		if (!mEnvironment.getPreferences().isRunningLocally()
+				&& current > mEnvironment.getPreferences().getTInt()) {
 			if (scanForInternet(listener)) {
 				return;
 			}
@@ -165,16 +166,18 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 		mWiFi.scanForAP(timeoutMilis, listener, this);
 
 	}
+
 	/**
-	 * Check for internet on AP Scanning Ticks
-	 * Returns true if state changed to Connected
+	 * Check for internet on AP Scanning Ticks Returns true if state changed to
+	 * Connected
 	 */
 	@Override
 	public boolean scanForInternet(OnAccessPointScanListener listener) {
 		long current = System.currentTimeMillis() - lastInternetConnection;
-		if (current > mEnvironment.getPreferences().getTInt() && isNetworkAvailable()) {
+		if (current > mEnvironment.getPreferences().getTInt()
+				&& isNetworkAvailable()) {
 			if (ping()) {
-				Log.d("Machine State", " Connected internet From Scan" );
+				Log.d("Machine State", " Connected internet From Scan");
 				lastInternetConnection = System.currentTimeMillis();
 				listener.onInternetConnection();
 				return true;
@@ -183,41 +186,40 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 			}
 		}
 
-
 		return false;
-	
 
 	}
+
 	/**
 	 * Check for internet state (used in the sync process)
 	 */
 	@Override
-	public void scanForInternet(int timeout,
-			OnScanInternet listener) {
+	public void scanForInternet(int timeout, OnScanInternet listener) {
 		final WifiManager manager = (WifiManager) mContext
 				.getSystemService(Context.WIFI_SERVICE);
 		manager.setWifiEnabled(true);
-		
+
 		long current = System.currentTimeMillis() - lastInternetConnection;
-		if ((current > mEnvironment.getPreferences().getTInt()|| LOSTService.toStop) && isNetworkAvailable()) {
+		if ((current > mEnvironment.getPreferences().getTInt() || LOSTService.toStop)
+				&& isNetworkAvailable()) {
 			if (ping()) {
-				Log.d("Machine State", " Connected internet" );
+				Log.d("Machine State", " Connected internet");
 				lastInternetConnection = System.currentTimeMillis();
 				listener.onInternetConnection();
 			} else {
 				Log.d(TAG, " No ping internet");
 			}
 		}
-		//Log.d("Machine State", " No ping internet");
+		// Log.d("Machine State", " No ping internet");
 
-		 internetTicking(timeout,
-		 mEnvironment.getPreferences().getScanPeriod(),
-		 0, listener);
+		internetTicking(timeout, mEnvironment.getPreferences().getScanPeriod(),
+				0, listener);
 
 	}
-	
+
 	/**
 	 * Ticks checking for internet
+	 * 
 	 * @param timeoutMilis
 	 * @param delay
 	 * @param totaltime
@@ -292,16 +294,16 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Sets the Scanning state current time for timeout purposes
 	 */
 	@Override
 	public void setTimeInScan(long timeInScan) {
-		this.timeInScan=timeInScan;
-		 
+		this.timeInScan = timeInScan;
+
 	}
-	
+
 	/**
 	 * Get time spent in scanning mode
 	 */
@@ -309,6 +311,5 @@ public class AndroidNetworkingFacade implements INetworkingFacade {
 	public long getTimeInScan() {
 		return timeInScan;
 	}
-
 
 }

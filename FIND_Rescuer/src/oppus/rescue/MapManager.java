@@ -246,7 +246,7 @@ public class MapManager implements OnMarkerClickListener, OnMapClickListener {
 
 				if (lastUpdate < added)
 					lastUpdate = added;
-				cv.put(SQLittleObserver.COL_ADDED, added);
+				//cv.put(SQLittleObserver.COL_ADDED, added);
 				cv.put(SQLittleObserver.COL_ID, node + time);
 				cv.put(SQLittleObserver.COL_NODE, node);
 				cv.put(SQLittleObserver.COL_TIME, time);

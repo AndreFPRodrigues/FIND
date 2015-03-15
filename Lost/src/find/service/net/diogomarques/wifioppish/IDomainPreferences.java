@@ -160,5 +160,11 @@ public interface IDomainPreferences {
 	 * @return User's google account name
 	 */
 	public String getAccountName();
+	
+	/**
+	 * Returns true if the device is suppose to only run locally and never connect with our servers
+	 * @return
+	 */
+	public boolean isRunningLocally();
 
 }

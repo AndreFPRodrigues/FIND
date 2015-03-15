@@ -135,26 +135,6 @@ public class DemoActivity extends Activity {
 		final SharedPreferences preferences = getApplicationContext()
 				.getSharedPreferences("Lost",
 						android.content.Context.MODE_PRIVATE);
-		// Service preferences listener
-		associationStatus
-				.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-
-					@Override
-					public void onCheckedChanged(RadioGroup group, int checkedId) {
-						if (R.id.manual == checkedId) {
-							associationState = MANUAL;
-						} else {
-							associationState = POP_UP;
-						}
-
-						SharedPreferences.Editor editor = preferences.edit();
-						editor.putInt("associationState", associationState);
-						editor.commit();
-						RequestServer.savePreferences(associationState,
-								allowStorage, regid);
-
-					}
-				});
 
 	}
 	
@@ -236,7 +216,6 @@ public class DemoActivity extends Activity {
 			address = info.getMacAddress();
 			address = NodeIdentification.getNodeId(address);
 
-			setAssociationStatus(idRadioButton);
 
 			// registers user for simulation if intent equals
 			// "registerParticipant"
@@ -254,26 +233,7 @@ public class DemoActivity extends Activity {
 		}
 	}
 
-	/**
-	 * Toggle the stored preference
-	 * 
-	 * @param idRadioButton
-	 */
-	private void setAssociationStatus(int idRadioButton) {
-		RadioButton rt = null;
-
-		switch (idRadioButton) {
-		case MANUAL:
-			rt = (RadioButton) findViewById(R.id.manual);
-			break;
-		case POP_UP:
-		case AUTO:
-			rt = (RadioButton) findViewById(R.id.pop);
-			break;
-		}
-		rt.toggle();
-	}
-
+	
 	private boolean checkAssociationLocal() {
 
 		String URL = "content://find.service.net.diogomarques.wifioppish.MessagesProvider/simulation";
@@ -437,81 +397,12 @@ public class DemoActivity extends Activity {
 
 	}
 
-	/**
-	 * Handles the on click of the Associate/dissociate Button
-	 * 
-	 * @param view
-	 */
-	public void associate(final View view) {
-		if (state_associated) {
-			disassociate();
-			return;
-		}
-		AlertDialog.Builder alertDialog = new AlertDialog.Builder(
-				DemoActivity.this);
-		LayoutInflater inflater = getLayoutInflater();
-		View convertView = (View) inflater.inflate(R.layout.custom, null);
-		alertDialog.setView(convertView);
-		alertDialog.setTitle("Simulations");
-
-		final ListView lv = (ListView) convertView.findViewById(R.id.listView1);
-		lv.setBackgroundColor(Color.WHITE);
-		String[] simu = new String[activeSimulations.length];
-
-		for (int i = 0; i < simu.length; i++) {
-			simu[i] = activeSimulations[i].getName() + ", "
-					+ activeSimulations[i].getLocation();
-		}
-		ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-				android.R.layout.simple_list_item_1, simu);
-		lv.setAdapter(adapter);
-		final AlertDialog al = alertDialog.show();
-
-		lv.setOnItemClickListener(new OnItemClickListener() {
-
-			@Override
-			public void onItemClick(AdapterView<?> parent, View view,
-					int position, long id) {
-				final int p = position;
-				view.invalidate();
-				AlertDialog.Builder alert = new AlertDialog.Builder(
-						DemoActivity.this);
-				state_associated = true;
-
-				RequestServer.registerForSimulation(
-						activeSimulations[position].getName(), regid, address);
-
-				registeredSimulation = activeSimulations[p].getName();
-				date = activeSimulations[p].date;
-				duration = activeSimulations[p].duration;
-				location = activeSimulations[p].location;
-				Simulation.regSimulationContentProvider(registeredSimulation,
-						date, duration, location, context);
-				final String _start_date = activeSimulations[position].date;
-				final String _duration = activeSimulations[position].date;
-
-				ui.post(new Runnable() {
-					public void run() {
-						Log.d("debugg", "associate to" + registeredSimulation);
-						ScheduleService.setStartAlarm(_start_date, _duration,
-								context);
-						test.setText(activeSimulations[p].toString());
-						test.setVisibility(View.VISIBLE);
-						associate.setText(R.string.disassociate);
-						al.cancel();
-						activeSimulations[p].activate(context);
-
-					}
-				});
-			}
-		});
-		al.setCanceledOnTouchOutside(true);
-	}
+	
 
 	/**
 	 * Dissassociate from the current simulation/alert
 	 */
-	public void disassociate() {
+	/*public void disassociate() {
 		Simulation.regSimulationContentProvider("", "", "", "", context);
 
 		ui.post(new Runnable() {
@@ -524,7 +415,7 @@ public class DemoActivity extends Activity {
 		});
 		state_associated = false;
 
-	}
+	}*/
 
 
 	@Override
@@ -539,10 +430,10 @@ public class DemoActivity extends Activity {
 	    // Handle item selection
 	    switch (item.getItemId()) {
 	        case R.id.down_message:
-	        	RequestServer.downloadAPK(this,"message.apk");
+	        	//RequestServer.downloadAPK(this,"message.apk");
 	            return true;
 	        case R.id.down_rescue:
-	        	RequestServer.downloadAPK(this,"rescuer.apk");
+	        	//RequestServer.downloadAPK(this,"rescuer.apk");
 
 	            return true;
 	        default:

@@ -40,6 +40,7 @@ public class SplashScreen extends Activity {
 	public static final String PROPERTY_REG_ID = "registration_id";
 	public static final String PROPERTY_ACCOUNT = "google_account";
 	private static final String PROPERTY_APP_VERSION = "appVersion";
+
 	private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
 	private static final int REQUEST_CODE_EMAIL = 1;
@@ -81,12 +82,17 @@ public class SplashScreen extends Activity {
 
 		// check if registered
 		if (checkIfRegistered()) {
-
+			final SharedPreferences prefs = getGcmPreferences(context);
+			RequestServer.endpoint=prefs.getString(RequestServer.SERVER, "");
+			
 			// if registered send again to server and go to demoAcitivity
 			Log.d(TAG, regid);
+			Log.d(TAG, "endpoint:" + RequestServer.endpoint);
 
+			
 			// RequestServer.register(address, regid, account);
 			RequestServer.uploadLogFile(address);
+			
 
 			Intent i = new Intent(SplashScreen.this, DemoActivity.class);
 			startActivity(i);
@@ -219,9 +225,14 @@ public class SplashScreen extends Activity {
 					msg = "Device registered, registration ID=" + regid
 							+ " add:" + address + " ac:" + account;
 					Log.d(TAG, msg);
-
-					RequestServer.register(address, regid, account);
-
+					
+					String locale = context.getResources().getConfiguration().locale.getCountry();
+					
+					SharedPreferences prefs = getGcmPreferences(context);
+					RequestServer.register(locale, address, regid, account,prefs);
+					
+				
+					
 					// Persist the regID and account - no need to register again.
 					storeRegistrationDetails(context, regid, account);
 
@@ -336,9 +347,6 @@ public class SplashScreen extends Activity {
 	 * @return Application's {@code SharedPreferences}.
 	 */
 	private SharedPreferences getGcmPreferences(Context context) {
-		// This sample app persists the registration ID in shared preferences,
-		// but
-		// how you store the regID in your app is up to you.
 		return getSharedPreferences(DemoActivity.class.getSimpleName(),
 				Context.MODE_PRIVATE);
 	}

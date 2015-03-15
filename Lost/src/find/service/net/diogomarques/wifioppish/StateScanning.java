@@ -39,6 +39,7 @@ public class StateScanning extends AState {
 			@Override
 			public void onScanTimeout() {
 				environment.deliverMessage("t_scan timeout");
+				Log.w("Machine State", "Scan Timeout");
 					environment.gotoState(State.Beaconing);
 			}
 
@@ -54,7 +55,9 @@ public class StateScanning extends AState {
 				} else {
 					environment.deliverMessage("connected to AP!");
 				}
-
+				//reset time in scanning mode
+				environment.getNetworkingFacade().setTimeInScan(0);
+				
 				environment.gotoState(State.Station);
 			}
 

@@ -8,6 +8,7 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import find.service.net.diogomarques.wifioppish.AndroidNetworkingFacade;
+import find.service.net.diogomarques.wifioppish.AndroidPreferences;
 import find.service.net.diogomarques.wifioppish.IDomainPreferences;
 import find.service.net.diogomarques.wifioppish.IEnvironment;
 import find.service.net.diogomarques.wifioppish.INetworkingFacade.OnAccessPointScanListener;
@@ -150,21 +151,22 @@ public class WiFiDelegate {
 				manager.startScan();
 				if (!connected.get()) {
 					if (totaltime >= timeoutMilis) {
-						//Log.w("", "Scan timeout");
+						Log.w("", "Scan timeout");
 						safeUnregisterReceiver(scanReceiver);
 						listener.onScanTimeout();
 						mEnvironment.getNetworkingFacade().setTimeInScan( 0);
 
 					} else {
 						//Log.w("", "Scan tick" + delay + " " + totaltime);
-						if (!mEnvironment.getNetworkingFacade()
+						if (!mEnvironment.getPreferences().isRunningLocally()
+								&&!mEnvironment.getNetworkingFacade()
 								.scanForInternet(listener)) {
-							long totalTime = delay + totaltime;
-							scanTick(timeoutMilis, delay, manager, connected,
-									totalTime, scanReceiver, listener);
 						}else{
 							mEnvironment.getNetworkingFacade().setTimeInScan( totaltime);
 						}
+						long totalTime = delay + totaltime;
+						scanTick(timeoutMilis, delay, manager, connected,
+								totalTime, scanReceiver, listener);
 					}
 				}else{
 					mEnvironment.getNetworkingFacade().setTimeInScan( totaltime);

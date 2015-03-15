@@ -282,7 +282,7 @@ public class AndroidEnvironment implements IEnvironment {
 				timeout = mPreferences.getTWeb();
 				break;
 			case Stopped:
-				if (LOSTService.synced) {
+				if (LOSTService.synced || mPreferences.isRunningLocally()) {
 					LOSTService.terminate(context);
 					return;
 				} else {

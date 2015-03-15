@@ -41,6 +41,7 @@ import com.google.android.gms.maps.model.LatLng;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -49,10 +50,13 @@ import android.os.Environment;
 import android.util.Log;
 
 public class RequestServer {
+	
+	public static final String SERVER = "server";
+	public static final String MODE = "mode";
 
-	private static String postCoordinates = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/victims";
+	public static String endpoint = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/";
+	private static String postCoordinates = "index.php/rest/victims";
 	private static String postLogFile = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/log/upload.php";
-	private static String downloadAPK = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/apk/";
 
 	private static String TAG = "gcm";
 
@@ -148,52 +152,21 @@ public class RequestServer {
 	}
 
 	// Register this account with the server.
-	public static void register(final String mac, final String regId,
-			final String email) {
+	public static void register(final String locale, final String mac,
+			final String regId, final String email, final SharedPreferences prefs) {
 
 		new AsyncTask<Void, Void, String>() {
+			
 			@Override
 			protected String doInBackground(Void... params1) {
-				String serverUrl = "http://accessible-serv.lasige.di.fc.ul.pt/~lost/gcm/register.php";
 
-				Map<String, String> params = new HashMap<String, String>();
-				params.put("regId", regId);
-				params.put("mac", mac);
-				params.put("email", email);
-				// Post registration values to web server
-				try {
-					RequestServer.post(serverUrl, params);
-
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				return serverUrl;
-			}
-		}.execute(null, null, null);
-
-	}
-
-	/**
-	 * Update association method (manual/pop_up) in the server
-	 */
-	public static void savePreferences(final int associationState,
-			final int allowStorage, final String regid) {
-		new AsyncTask<Void, Void, String>() {
-			@Override
-			protected String doInBackground(Void... params) {
-				StringBuilder builder = new StringBuilder();
+				// Get location based on IP
+				ArrayList<String> builder = new ArrayList<String>();
 				HttpClient client = new DefaultHttpClient();
 				HttpGet httpGet;
-
-				httpGet = new HttpGet(
-						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations/savePreferences/"
-								+ associationState
-								+ ","
-								+ allowStorage
-								+ ","
-								+ regid);
-
+				httpGet = new HttpGet("http://ip-api.com/line");
+				String serverRegister = endpoint + "gcm/register.php";
+				String mode ="";
 				try {
 					HttpResponse response = client.execute(httpGet);
 					StatusLine statusLine = response.getStatusLine();
@@ -205,80 +178,71 @@ public class RequestServer {
 								new InputStreamReader(content));
 						String line;
 						while ((line = reader.readLine()) != null) {
-							builder.append(line);
+							builder.add(line);
 						}
+						String location = builder.get(1);
+						builder.clear();
+						httpGet = new HttpGet(endpoint
+								+ "index.php/rest/server/location/" + location);
+
+						response = client.execute(httpGet);
+						statusLine = response.getStatusLine();
+						statusCode = statusLine.getStatusCode();
+						if (statusCode == 200) {
+							entity = response.getEntity();
+							content = entity.getContent();
+							reader = new BufferedReader(new InputStreamReader(
+									content));
+							while ((line = reader.readLine()) != null) {
+								builder.add(line);
+							}
+						}
+						if (builder.size() > 0) {
+							JSONArray serverArray = new JSONArray(
+									builder.get(0));
+							JSONObject serverUrl = serverArray.getJSONObject(0);
+							endpoint = serverUrl.getString("url");
+							mode= serverUrl.getString("mode");
+							SharedPreferences.Editor editor = prefs.edit();
+							editor.putString(SERVER, endpoint);
+							editor.putString(MODE, mode);
+							editor.commit();
+						}
+						
+						
+						
+												
+						serverRegister = endpoint + "gcm/register.php";
+						Map<String, String> params = new HashMap<String, String>();
+						params.put("regId", regId);
+						params.put("mac", mac);
+						params.put("email", email); // Post registration values
+													// toweb server
+						try {
+							RequestServer.post(serverRegister, params);
+
+						} catch (IOException e) { // TODO Auto-generated catch
+													// block
+							e.printStackTrace();
+						}
+
 					}
 				} catch (ClientProtocolException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
 					e.printStackTrace();
-				}
-
-				return null;
-			}
-		}.execute(null, null, null);
-	}
-
-	/**
-	 * Registers user in a simulation
-	 * 
-	 * @param name
-	 */
-	public static void registerForSimulation(final String name,
-			final String regid, final String address) {
-
-		new AsyncTask<Void, Void, String>() {
-			@Override
-			protected String doInBackground(Void... params) {
-				StringBuilder builder = new StringBuilder();
-				HttpClient client = new DefaultHttpClient();
-				HttpPost httpPost;
-
-				httpPost = new HttpPost(
-						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations");
-
-				try {
-					List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(
-							3);
-					nameValuePairs.add(new BasicNameValuePair("name", name));
-					nameValuePairs.add(new BasicNameValuePair("regid", regid));
-					nameValuePairs.add(new BasicNameValuePair("mac_address",
-							address));
-
-					Log.d(TAG, "Associating: " + name + " " + regid + " "
-							+ address);
-
-					httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-					// Execute HTTP Post Request
-					HttpResponse response = client.execute(httpPost);
-					StatusLine statusLine = response.getStatusLine();
-					int statusCode = statusLine.getStatusCode();
-					if (statusCode == 200) {
-						HttpEntity entity = response.getEntity();
-						InputStream content = entity.getContent();
-						BufferedReader reader = new BufferedReader(
-								new InputStreamReader(content));
-						String line;
-						while ((line = reader.readLine()) != null) {
-							builder.append(line);
-						}
-						Log.d("gcm", "response " + builder.toString());
-					} else {
-						// Log.e(ParseJSON.class.toString(),
-						// "Failed to download file");
-					}
-				} catch (ClientProtocolException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
-				return builder.toString();
+				return serverRegister;
 			}
+			
 		}.execute(null, null, null);
 
 	}
+	
 
 	public static void sendCoordinates(final String macAddress,
 			final LatLng local, final float batery, final String account,
@@ -306,7 +270,7 @@ public class RequestServer {
 					jsonArray.put(json);
 					String contents = jsonArray.toString();
 					HttpClient httpclient = new DefaultHttpClient();
-					HttpPost httppost = new HttpPost(postCoordinates);
+					HttpPost httppost = new HttpPost(endpoint + postCoordinates);
 					List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(
 							2);
 					nameValuePairs
@@ -339,9 +303,8 @@ public class RequestServer {
 				HttpClient client = new DefaultHttpClient();
 				HttpGet httpGet;
 
-				httpGet = new HttpGet(
-						"http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest/simulations/deletePoints/"
-								+ regid);
+				httpGet = new HttpGet(endpoint
+						+ "index.php/rest/simulations/deletePoints/" + regid);
 
 				try {
 					HttpResponse response = client.execute(httpGet);
@@ -490,52 +453,6 @@ public class RequestServer {
 			}
 		}).start();
 
-	}
-
-	public static void downloadAPK(final Context context, final String apk) {
-		new Thread(new Runnable() {
-			public void run() {
-				try {
-
-					URL url = new URL(downloadAPK + apk);
-					HttpURLConnection c = (HttpURLConnection) url
-							.openConnection();
-					c.setRequestMethod("GET");
-					c.setDoOutput(true);
-					c.connect();
-
-					String PATH = Environment.getExternalStorageDirectory()
-							+ "/download/";
-					File file = new File(PATH);
-					file.mkdirs();
-					File outputFile = new File(file, "app.apk");
-					FileOutputStream fos = new FileOutputStream(outputFile);
-
-					InputStream is = c.getInputStream();
-
-					byte[] buffer = new byte[1024];
-					int len1 = 0;
-					while ((len1 = is.read(buffer)) != -1) {
-						fos.write(buffer, 0, len1);
-					}
-					fos.close();
-					is.close();// till here, it works fine - .apk is download to
-								// my sdcard in download file
-
-					Intent intent = new Intent(Intent.ACTION_VIEW);
-					intent.setDataAndType(Uri.fromFile(new File(Environment
-							.getExternalStorageDirectory()
-							+ "/download/"
-							+ "app.apk")),
-							"application/vnd.android.package-archive");
-					intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-					context.startActivity(intent);
-
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}).start();
 	}
 
 }

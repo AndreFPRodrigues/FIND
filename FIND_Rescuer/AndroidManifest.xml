@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="oppus.rescue"
-    android:versionCode="9"
+    android:versionCode="10"
     android:versionName="2.2" >
 
-    <uses-sdk android:minSdkVersion="14" />
+    <uses-sdk android:minSdkVersion="16" />
 
     <permission
         android:name="info.androidhive.googlemapsv2.permission.MAPS_RECEIVE"
@@ -58,8 +58,11 @@
             android:value="@integer/google_play_services_version" />
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyA5-RnvbHXIIgJjjjZah4MykxvV9HV7i80" />
-        <!-- android:value="AIzaSyDbBhS55SZzN6OBoGSgqwIQzYQYAnJWXAU" /> -->
+             android:value="AIzaSyDbBhS55SZzN6OBoGSgqwIQzYQYAnJWXAU" /> 
+                    
+            
+                    <!--   android:value="AIzaSyA5-RnvbHXIIgJjjjZah4MykxvV9HV7i80" /> -->
+            
 
         <activity
             android:name="oppus.rescue.MainActivity"

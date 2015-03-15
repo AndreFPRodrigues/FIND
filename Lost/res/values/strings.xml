@@ -16,7 +16,7 @@
     <!-- was 40000 -->
     <string name="value_t_int">300000</string>
     <string name="value_t_freq">2000</string>
-    <string name="value_t_api">http://accessible-serv.lasige.di.fc.ul.pt/~lost/index.php/rest</string>
+    <string name="value_t_api">server</string>
     <string name="value_t_web">5000</string>
 
     <!-- settings keys for storing and retrieving values -->

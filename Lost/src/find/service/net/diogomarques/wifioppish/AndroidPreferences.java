@@ -4,12 +4,15 @@ import java.util.Random;
 
 import find.service.R;
 import find.service.gcm.DemoActivity;
+import find.service.gcm.RequestServer;
 import find.service.gcm.SplashScreen;
 import find.service.net.diogomarques.wifioppish.IEnvironment.State;
+import android.app.DownloadManager.Request;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 /**
  * Android-specific domain parameters.
@@ -19,10 +22,10 @@ import android.preference.PreferenceManager;
 public class AndroidPreferences implements IDomainPreferences {
 
 	// FIXME switch before deployment
-	public static boolean DEBUG = true; 
-	
-	public static boolean apAvailable = true; 
+	public final static boolean DEBUG = true;
+	// public static boolean INTERNET_AVAILABLE= true;
 
+	public static boolean apAvailable = true;
 
 	/*
 	 * Universal timeout parameter for use in debugging.
@@ -44,6 +47,7 @@ public class AndroidPreferences implements IDomainPreferences {
 
 	/**
 	 * Gets the Android context
+	 * 
 	 * @return Android Context
 	 */
 	protected Context getContext() {
@@ -57,7 +61,7 @@ public class AndroidPreferences implements IDomainPreferences {
 
 	@Override
 	public int getTBeac() {
-		return getRandomTimeFromKey(R.string.key_t_beac); 
+		return getRandomTimeFromKey(R.string.key_t_beac);
 	}
 
 	@Override
@@ -74,15 +78,16 @@ public class AndroidPreferences implements IDomainPreferences {
 	public int getTCon() {
 		return getRandomTimeFromKey(R.string.key_t_con);
 	}
-	@Override 
+
+	@Override
 	public int getTInt() {
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(mContext);
 		String key = mContext.getString(R.string.key_t_int);
 		int minTime = Integer.parseInt(prefs.getString(key, null));
-		//TODO was 2* minTime
-		int dif = minTime ;
-		
+		// TODO was 2* minTime
+		int dif = minTime;
+
 		return (int) (new Random().nextDouble() * dif + minTime);
 	}
 
@@ -103,14 +108,14 @@ public class AndroidPreferences implements IDomainPreferences {
 	 */
 	protected int getRandomTimeFromKey(int resId) {
 		if (DEBUG)
-			return debugMinTimeMilis + (1000 * 10)
-					+ (int) (new Random().nextDouble() * debugMinTimeMilis);
+			return debugMinTimeMilis; // + (new Random().nextInt(10) *1000);
+
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(mContext);
 		String key = mContext.getString(resId);
 		int minTime = Integer.parseInt(prefs.getString(key, null));
-		//TODO was 2* minTime
-		int dif = minTime ;
+		// TODO was 2* minTime
+		int dif = minTime;
 		return (int) (new Random().nextDouble() * dif + minTime);
 	}
 
@@ -133,23 +138,23 @@ public class AndroidPreferences implements IDomainPreferences {
 	public State getStartState() {
 		return IEnvironment.State.Scanning;
 	}
+
 	@Override
 	public boolean checkInternetMode() {
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(mContext);
-		boolean internetState = prefs.getBoolean("internet",true);
-		//FIXME Before deployinmentwas 2* minTime
+		boolean internetState = prefs.getBoolean("internet", true);
+		// FIXME Before deployinmentwas 2* minTime
 
 		return internetState;
 	}
 
 	@Override
 	public String getApiEndpoint() {
-		SharedPreferences prefs = PreferenceManager
-				.getDefaultSharedPreferences(mContext);
-		String key = mContext.getString(R.string.key_t_api);
-		String address = prefs.getString(key, null);
-		
+		SharedPreferences prefs = mContext.getSharedPreferences(
+				DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
+		String address = prefs.getString(RequestServer.SERVER, null);
+
 		return address;
 	}
 
@@ -177,18 +182,18 @@ public class AndroidPreferences implements IDomainPreferences {
 				.getDefaultSharedPreferences(mContext);
 		String key = mContext.getString(R.string.key_t_nodeid);
 		String nodeid = prefs.getString(key, null);
-		
+
 		// generate if invalid
-		if(nodeid == null || nodeid.equals("")) {
+		if (nodeid == null || nodeid.equals("")) {
 			nodeid = NodeIdentification.getMyNodeId(mContext);
 			Editor prefEditor = prefs.edit();
 			prefEditor.putString(key, nodeid);
 			prefEditor.commit();
 		}
-		
+
 		return nodeid;
 	}
-	
+
 	@Override
 	public String getAccountName() {
 		SharedPreferences prefs = mContext.getSharedPreferences(
@@ -197,5 +202,21 @@ public class AndroidPreferences implements IDomainPreferences {
 		String key = SplashScreen.PROPERTY_ACCOUNT;
 		String accountName = prefs.getString(key, "Unknown");
 		return accountName;
+	}
+
+	// check if should run only locally 
+	//without connecting to the internet
+	@Override
+	public boolean isRunningLocally() {
+		SharedPreferences prefs = mContext.getSharedPreferences(
+				DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
+		String mode = prefs.getString(RequestServer.MODE, "LOCAL");
+		Log.d("gcm", "Mode: " +mode);
+
+		if(mode.equals("LOCAL"))
+			return true;
+		else{
+			return false;
+		}
 	}
 }

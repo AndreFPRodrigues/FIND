@@ -20,6 +20,7 @@ import find.service.net.diogomarques.wifioppish.NodeIdentification;
 import find.service.net.diogomarques.wifioppish.sensors.LocationSensor;
 import find.service.net.diogomarques.wifioppish.service.LOSTService;
 import android.app.Activity;
+import android.app.DownloadManager.Request;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -40,6 +41,8 @@ import android.util.Log;
 public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 	private final String TAG = "GCM_Receiver";
 	private final int STOP = 3;
+	private final int CHANGE_MODE = 4;
+
 	private final int RADIUS_DOWNLOAD = 1;
 	private Context c;
 
@@ -68,15 +71,15 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		this.intent = intent;
 
 		// check if its alarm to start the service and enables it
-		/*if (intent.getAction().equals("startAlarm")) {
-			Log.d(TAG, "Handling alarm");
-			handleAlarm();
-			return;
-		}*/
+		/*
+		 * if (intent.getAction().equals("startAlarm")) { Log.d(TAG,
+		 * "Handling alarm"); handleAlarm(); return; }
+		 */
 
-		
 		// get data from push notification
 		type = intent.getExtras().getString("type");
+		String mode= intent.getExtras().getString("mode");
+
 		Log.d(TAG, "Type:" + type);
 
 		// if received stop notification start the stopping service
@@ -85,11 +88,19 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 			if (tp == STOP) {
 				Log.d(TAG, "Stopping service");
-				Notifications
-						.generateNotification(c, "FIND Service","Terminating the service", null);
+				Notifications.generateNotification(c, "FIND Service",
+						"Terminating the service", null);
 				ScheduleService.cancelAlarm(c);
-				Simulation.regSimulationContentProvider("","","","",c);
+				Simulation.regSimulationContentProvider("", "", "", "", c);
 				LOSTService.stop(c);
+				return;
+			}
+			if (tp == CHANGE_MODE) {
+				SharedPreferences prefs = c.getSharedPreferences(DemoActivity.class.getSimpleName(),
+						Context.MODE_PRIVATE);
+				SharedPreferences.Editor editor = prefs.edit();
+				editor.putString(RequestServer.MODE, mode);
+				editor.commit();
 				return;
 			}
 		} catch (NumberFormatException e) {
@@ -116,7 +127,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 		// retrieving last best location
 
-
 		Location l = LocationFunctions.getBestLocation(context);
 		if (l == null || LocationFunctions.oldLocation(l)) {
 			Log.d(TAG, "old or null location");
@@ -129,7 +139,8 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 		} else {
 
-			Notifications.generateNotification(c,"Alert" , "Location Found!", null);
+			Notifications.generateNotification(c, "Alert", "Location Found!",
+					null);
 
 			// prompt pop up window
 			currentLoc = l;
@@ -137,8 +148,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 		}
 
 	}
-
-	
 
 	/**
 	 * Prompt timed pop-up asking if the user wishes to associate himself with
@@ -152,43 +161,49 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 				.getSharedPreferences("Lost",
 						android.content.Context.MODE_PRIVATE);
 
-		double latitude = currentLoc.getLatitude();
-		double longitude = currentLoc.getLongitude();
-		
 		// if location is defined check if its inside the area of the alert
 		boolean isInside;
 		LatLng center;
-		if (currentLoc != null && latitude != 0) {
-			Log.d(TAG, "got location:" + latitude + " " + longitude);
-			SharedPreferences.Editor editor = preferences.edit();
-			editor.putBoolean("location", true);
-			editor.commit();
+		if (currentLoc != null) {
+			double latitude = currentLoc.getLatitude();
+			double longitude = currentLoc.getLongitude();
+			if (latitude != 0) {
 
-			center = new LatLng(latitude, longitude);
-			isInside = LocationFunctions.isInLocation(currentLoc, latS, lonS,
-					latE, lonE);
-			if (!isInside) {
-				Log.d(TAG, "Stopping: not inside bounds");
+				Log.d(TAG, "got location:" + latitude + " " + longitude);
+				SharedPreferences.Editor editor = preferences.edit();
+				editor.putBoolean("location", true);
+				editor.commit();
 
-				Notifications.generateNotification(c,"Alert" ,"Not inside bounds!", null);
-				return; 
+				center = new LatLng(latitude, longitude);
+				isInside = LocationFunctions.isInLocation(currentLoc, latS,
+						lonS, latE, lonE);
+				if (!isInside) {
+					Log.d(TAG, "Stopping: not inside bounds");
+
+					Notifications.generateNotification(c, "Alert",
+							"Not inside bounds!", null);
+					return;
+				}
+
+				final SharedPreferences prefs = c.getSharedPreferences(
+						DemoActivity.class.getSimpleName(),
+						Context.MODE_PRIVATE);
+				String account = prefs.getString(SplashScreen.PROPERTY_ACCOUNT,
+						"");
+
+				RequestServer.sendCoordinates(
+						NodeIdentification.getMyNodeId(c), center,
+						LocationFunctions.getBatteryLevel(c), account,
+						currentLoc.getAccuracy(), currentLoc.getTime());
+				LatLng start = LocationFunctions.adjustCoordinates(center,
+						RADIUS_DOWNLOAD, 135);
+				intent.putExtra("latS", start.latitude);
+				intent.putExtra("lonS", start.longitude);
+				LatLng end = LocationFunctions.adjustCoordinates(center,
+						RADIUS_DOWNLOAD, 315);
+				intent.putExtra("latE", end.latitude);
+				intent.putExtra("lonE", end.longitude);
 			}
-			
-			final SharedPreferences prefs = c.getSharedPreferences(
-					DemoActivity.class.getSimpleName(), Context.MODE_PRIVATE);
-			String account= prefs.getString(SplashScreen.PROPERTY_ACCOUNT, "");
-			
-			RequestServer.sendCoordinates(NodeIdentification.getMyNodeId(c),
-					center, LocationFunctions.getBatteryLevel(c),account ,currentLoc.getAccuracy(),currentLoc.getTime());
-			LatLng start = LocationFunctions.adjustCoordinates(center,
-					RADIUS_DOWNLOAD, 135);
-			intent.putExtra("latS", start.latitude);
-			intent.putExtra("lonS", start.longitude);
-			LatLng end = LocationFunctions.adjustCoordinates(center,
-					RADIUS_DOWNLOAD, 315);
-			intent.putExtra("latE", end.latitude);
-			intent.putExtra("lonE", end.longitude);
-
 		} else {
 			Log.d(TAG, "Location undefined: calculating center");
 
@@ -221,14 +236,6 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 
 	}
 
-	
-
-
-
-
-
-
-
 	/**
 	 * Try to gather location from gps start popup activity if it gets it
 	 */
@@ -241,7 +248,8 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			if (location.getLatitude() != 0) {
 				ls.stopSensor();
 
-				Notifications.generateNotification(c, "Alert", "Location Found!", null);
+				Notifications.generateNotification(c, "Alert",
+						"Location Found!", null);
 
 				startPopUp(location);
 			} else {
@@ -262,13 +270,12 @@ public class GcmBroadcastReceiver extends WakefulBroadcastReceiver {
 			attempts++;
 		} else {
 
-			Notifications.generateNotification(c,"Alert" ,"Undefined location!", null);
+			Notifications.generateNotification(c, "Alert",
+					"Undefined location!", null);
 
 			ls.stopSensor();
 			startPopUp(null);
 		}
 	}
-
-
 
 }

@@ -67,8 +67,8 @@ public class StateInternetConn extends AState {
 		try {
 			String endpoint;
 			endpoint = new StringBuilder()
-					.append(environment.getPreferences().getApiEndpoint())
-					.append('/').append(METHOD).toString();
+					.append(environment.getPreferences().getApiEndpoint()).append("index.php/rest/")
+					.append(METHOD).toString();
 			if (LOSTService.toStop) {
 				endpoint += "/legacy";
 			}
