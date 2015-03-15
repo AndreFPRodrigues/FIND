@@ -219,7 +219,6 @@ public class MessageBoard extends ActionBarActivity {
 		@Override
 		protected void onPostExecute(String result) {
 			Log.d("TAG", "My node id is: " + result);
-			// finish progress bar
 
 			// the service is running and the node id has been retrieved.
 			// It's time to start our APP
